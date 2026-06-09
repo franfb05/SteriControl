@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SteriControl · HMI Vall d'Hebron</title>
+<style>
+  /* ── RESET & BASE ─────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy:   #0f172a;
+    --navy2:  #1e293b;
+    --navy3:  #334155;
+    --slate:  #64748b;
+    --muted:  #94a3b8;
+    --border: #e2e8f0;
+    --bg:     #f8fafc;
+    --white:  #ffffff;
+    --blue:   #2563eb;
+    --blue2:  #1d4ed8;
+    --green:  #16a34a;
+    --green2: #f0fdf4;
+    --green3: #86efac;
+    --amber:  #d97706;
+    --amber2: #fffbeb;
+    --red:    #dc2626;
+    --red2:   #fef2f2;
+    --red3:   #fca5a5;
+    --red4:   #991b1b;
+    --purple: #7c3aed;
+    --purple2:#f5f3ff;
+    --purple3:#c4b5fd;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  html, body { height: 100%; font-family: var(--font); background: var(--navy); }
+  button { font-family: var(--font); cursor: pointer; border: none; outline: none; }
+  input, textarea, select { font-family: var(--font); outline: none; }
+
+  /* ── APP SHELL ────────────────────────────────────────────────────────── */
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── SCREENS (show/hide) ──────────────────────────────────────────────── */
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.active { display: flex; }
+
+  /* ── HEADER ───────────────────────────────────────────────────────────── */
+  .hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 14px; background: var(--navy); color: #fff;
+    gap: 8px; flex-shrink: 0;
+  }
+  .hdr-title { font-size: 14px; font-weight: 600; flex: 1; text-align: center; }
+  .hdr-vh { color: #60a5fa; font-weight: 800; }
+  .hdr-user { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .hdr-right { display: flex; align-items: center; gap: 8px; }
+  .back-btn {
+    background: none; color: var(--muted); display: flex;
+    align-items: center; gap: 4px; font-size: 12px; padding: 0;
+    white-space: nowrap;
+  }
+  .ghost-btn {
+    background: none; border: 1px solid var(--navy3); color: var(--muted);
+    display: flex; align-items: center; gap: 4px; font-size: 11px;
+    padding: 4px 9px; border-radius: 6px;
+  }
+  .badge {
+    background: var(--blue); color: #fff; border-radius: 10px;
+    font-size: 10px; padding: 1px 5px; margin-left: 3px;
+  }
+
+  /* ── PROGRESS BAR ─────────────────────────────────────────────────────── */
+  .prog-wrap { height: 3px; background: var(--border); flex-shrink: 0; }
+  .prog-bar  { height: 100%; width: 0%; transition: width 0.3s, background 0.3s; }
+
+  /* ── SCROLLABLE BODY ──────────────────────────────────────────────────── */
+  .body { flex: 1; overflow-y: auto; padding: 12px 13px 24px; }
+
+  /* ── SECTION LABEL ────────────────────────────────────────────────────── */
+  .sec-lbl {
+    font-size: 10px; font-weight: 700; color: var(--slate);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 7px; margin-top: 13px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     LOGIN
+  ══════════════════════════════════════════════════════════════════════ */
+  #s-login {
+    background: var(--navy);
+    align-items: center; justify-content: center;
+  }
+  .login-card {
+    background: var(--navy2); border-radius: 16px;
+    padding: 26px; width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .login-head { display: flex; align-items: center; gap: 12px; }
+  .logo-box {
+    width: 46px; height: 46px; background: var(--blue); border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 17px; flex-shrink: 0;
+  }
+  .logo-title { font-size: 19px; font-weight: 700; color: #f1f5f9; }
+  .logo-sub   { font-size: 11px; color: var(--slate); }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .lbl { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .inp {
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--navy3);
+    background: var(--navy); color: #f1f5f9; font-size: 14px; width: 100%;
+  }
+  .inp::placeholder { color: var(--navy3); }
+  .inp:focus { border-color: var(--blue); }
+  .pass-wrap { position: relative; }
+  .show-btn {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; color: var(--slate); font-size: 11px;
+  }
+  .pwd-hint { font-size: 10px; color: #475569; margin-top: 3px; }
+  .err-box { background: #450a0a; color: #fca5a5; border-radius: 8px; padding: 9px 12px; font-size: 12px; }
+  .login-foot { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #475569; justify-content: center; }
+  .login-note { font-size: 10px; color: var(--navy3); text-align: center; }
+  .pwd-caducat { display: flex; align-items: center; gap: 6px; background: #451a03; color: #fed7aa; border-radius: 8px; padding: 10px 12px; font-size: 12px; font-weight: 500; }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     BUTTONS
+  ══════════════════════════════════════════════════════════════════════ */
+  .btn-blue {
+    width: 100%; padding: 11px; background: var(--blue); color: #fff;
+    border-radius: 10px; font-size: 14px; font-weight: 600;
+  }
+  .btn-blue:hover { background: var(--blue2); }
+  .btn-gray {
+    flex: 1; padding: 11px; background: var(--navy3); color: #f1f5f9;
+    border-radius: 10px; font-size: 13px; font-weight: 500;
+  }
+  .btn-fi {
+    width: 100%; padding: 13px; color: #fff; border-radius: 10px;
+    font-size: 13px; font-weight: 700; margin-top: 14px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     CAIXES
+  ══════════════════════════════════════════════════════════════════════ */
+  .scan-zone {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 11px 13px; margin-bottom: 10px;
+  }
+  .scan-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+  .scan-txt { font-size: 13px; color: #374151; font-weight: 500; }
+  .scan-inp {
+    width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 14px; font-family: monospace;
+  }
+  .scan-inp:focus { border-color: var(--blue); }
+  .scan-msg {
+    margin-top: 7px; padding: 7px 10px; border-radius: 7px;
+    font-size: 12px; font-weight: 600; border: 1px solid; display: none;
+  }
+  .scan-msg.ok   { background: var(--green2); color: #166534; border-color: var(--green3); }
+  .scan-msg.err  { background: var(--red2);   color: var(--red4); border-color: var(--red3); }
+  .search-inp {
+    width: 100%; padding: 9px 13px; border: 1px solid var(--border);
+    border-radius: 10px; font-size: 13px; margin-bottom: 4px;
+  }
+  .search-inp:focus { border-color: var(--blue); }
+
+  .caixa-card {
+    width: 100%; text-align: left; background: var(--white);
+    border: 1px solid var(--border); border-radius: 11px;
+    padding: 12px 13px; margin-bottom: 8px;
+    transition: box-shadow 0.15s;
+  }
+  .caixa-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .caixa-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; gap: 6px; }
+  .caixa-nom { font-size: 13px; font-weight: 600; color: var(--navy); flex: 1; line-height: 1.3; }
+  .caixa-badges { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
+  .caixa-meta { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--slate); flex-wrap: wrap; }
+  .dot { color: #cbd5e1; }
+  .crit-bdg { font-size: 9px; font-weight: 700; color: var(--red); background: var(--red2); border: 1px solid var(--red3); border-radius: 4px; padding: 2px 5px; white-space: nowrap; }
+  .ext-bdg  { font-size: 9px; font-weight: 700; color: var(--purple); background: var(--purple2); border: 1px solid var(--purple3); border-radius: 4px; padding: 2px 5px; white-space: nowrap; }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     MUNTATGE
+  ══════════════════════════════════════════════════════════════════════ */
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-bottom: 4px; }
+  .stat-box { background: var(--white); border: 1px solid var(--border); border-radius: 9px; padding: 8px 5px; text-align: center; }
+  .stat-n { font-size: 18px; font-weight: 700; display: block; }
+  .stat-l { font-size: 9px; color: var(--muted); display: block; }
+
+  .foto-card {
+    display: flex; align-items: center; gap: 9px; background: var(--white);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; cursor: pointer; margin-bottom: 4px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .foto-card.done { border-color: var(--green3); background: var(--green2); }
+  .foto-txt { font-size: 13px; color: var(--slate); }
+  .foto-card.done .foto-txt { color: #15803d; font-weight: 600; }
+
+  .ext-alert {
+    display: flex; align-items: center; gap: 7px; background: var(--purple2);
+    border: 1px solid var(--purple3); border-radius: 9px;
+    padding: 9px 12px; font-size: 12px; color: #6d28d9; font-weight: 500; margin-bottom: 4px;
+  }
+
+  .grup-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 11px; margin-bottom: 9px; overflow: hidden; }
+  .grup-hdr  { display: flex; align-items: center; gap: 5px; padding: 9px 12px; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .grup-nom  { font-size: 12px; font-weight: 700; color: var(--navy); flex: 1; }
+  .grup-cnt  { font-size: 10px; color: var(--muted); }
+  .crit-dot  { color: var(--red); font-size: 9px; margin-left: 2px; }
+
+  .unit-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 11px; border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s;
+  }
+  .unit-row.ok  { background: var(--green2); }
+  .unit-row.inc { background: var(--red2); }
+  .unit-left { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; }
+  .unit-dot {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; background: var(--border); font-size: 12px;
+    transition: background 0.15s;
+  }
+  .unit-dot.ok  { background: var(--green); color: #fff; }
+  .unit-dot.inc { background: var(--red);   color: #fff; }
+  .unit-nom { font-size: 12px; font-weight: 500; color: var(--navy); }
+  .unit-id  { font-size: 10px; color: var(--muted); font-weight: 400; }
+  .unit-motiu { font-size: 11px; color: var(--red); margin-top: 1px; }
+  .unit-pend  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .unit-actions { display: flex; gap: 5px; flex-shrink: 0; }
+  .act-btn {
+    width: 29px; height: 29px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--border); color: #374151; font-size: 13px;
+    transition: background 0.15s;
+  }
+  .act-btn.ok  { background: var(--green); color: #fff; }
+  .act-btn.inc { background: var(--red);   color: #fff; }
+
+  .pend-msg { text-align: center; font-size: 12px; color: var(--muted); margin-top: 14px; padding: 9px; background: #f1f5f9; border-radius: 8px; }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     MODAL INCIDÈNCIA
+  ══════════════════════════════════════════════════════════════════════ */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: none; align-items: flex-end; z-index: 100;
+  }
+  .overlay.open { display: flex; }
+  .modal-card {
+    background: var(--white); border-radius: 15px 15px 0 0;
+    padding: 18px; width: 100%; max-width: 480px; margin: 0 auto;
+    max-height: 80vh; overflow-y: auto;
+  }
+  .modal-title { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+  .modal-sub   { font-size: 13px; color: #374151; }
+  .modal-ref   { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .crit-warn {
+    display: flex; align-items: center; gap: 5px; background: var(--red2);
+    color: var(--red4); font-size: 11px; font-weight: 600;
+    padding: 7px 10px; border-radius: 7px; margin-bottom: 7px;
+  }
+  .motiu-btn {
+    display: block; width: 100%; padding: 9px 12px; border-radius: 7px;
+    margin-bottom: 5px; text-align: left; font-size: 13px; font-weight: 500;
+    background: #f1f5f9; color: var(--navy); transition: background 0.15s;
+  }
+  .motiu-btn.sel { background: var(--blue2); color: #fff; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 14px; }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     RESULTAT
+  ══════════════════════════════════════════════════════════════════════ */
+  .res-card { background: var(--white); border: 1px solid var(--border); border-radius: 11px; padding: 14px; margin-bottom: 11px; }
+  .res-estat { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .res-nom   { font-size: 17px; font-weight: 700; color: var(--navy); }
+  .res-meta  { font-size: 12px; color: var(--slate); margin-top: 3px; }
+  .stats-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 4px; }
+  .inc-item {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    background: var(--white); border: 1px solid var(--red3); border-radius: 8px;
+    padding: 9px 12px; margin-bottom: 6px;
+  }
+  .inc-nom  { font-size: 13px; font-weight: 500; }
+  .inc-ud   { font-size: 11px; color: var(--slate); }
+  .inc-mot  { font-size: 12px; color: var(--red); font-weight: 500; }
+  .foto-ok  { background: var(--green2); border: 1px solid var(--green3); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #166534; margin-top: 8px; }
+  .audit-box { background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 12px; margin: 11px 0; }
+  .audit-tit { font-size: 9px; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .audit-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .audit-k { color: var(--slate); }
+  .audit-v { font-weight: 500; }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     HISTORIAL
+  ══════════════════════════════════════════════════════════════════════ */
+  .hist-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 13px; margin-bottom: 9px;
+    border-left-width: 3px;
+  }
+  .hist-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+  .hist-nom { font-size: 14px; font-weight: 600; }
+  .hist-estat { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .hist-meta  { font-size: 12px; color: var(--muted); }
+  .hist-ext   { font-size: 11px; color: var(--purple); margin-top: 2px; }
+  .hist-inc   { font-size: 11px; color: #92400e; background: var(--amber2); border-radius: 5px; padding: 3px 7px; margin-top: 3px; }
+  .hist-foto  { font-size: 11px; color: #166534; margin-top: 4px; }
+  .empty-state { text-align: center; color: var(--muted); font-size: 14px; margin-top: 60px; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════════════════════════════════════
+       LOGIN
+  ═══════════════════════════════════════════════════ -->
+  <div id="s-login" class="screen active">
+    <div class="login-card">
+      <div class="login-head">
+        <div class="logo-box">SC</div>
+        <div>
+          <div class="logo-title">SteriControl</div>
+          <div class="logo-sub">Hospital Materno-Infantil · Esterilització</div>
+        </div>
+      </div>
+      <div id="login-normal">
+        <div class="field" style="margin-bottom:12px">
+          <label class="lbl">DNI / NIE</label>
+          <input id="inp-dni" class="inp" placeholder="12345678A" maxlength="10" autocomplete="off" />
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label class="lbl">Contrasenya</label>
+          <div class="pass-wrap">
+            <input id="inp-pass" class="inp" type="password" placeholder="Mínim 10 caràcters" style="padding-right:52px" />
+            <button class="show-btn" id="btn-show">Veure</button>
+          </div>
+          <div class="pwd-hint">10–20 caràcters · 1 majúscula · 1 minúscula · 1 número</div>
+        </div>
+        <div id="login-err" class="err-box" style="display:none;margin-bottom:12px"></div>
+        <button class="btn-blue" id="btn-login">Entrar al sistema</button>
+        <div class="login-foot" style="margin-top:12px">🔒 Contrasenya caduca cada 90 dies · Vall d'Hebron</div>
+        <div class="login-note" style="margin-top:6px">Demo: DNI 12345678A · qualsevol contrasenya vàlida (ex: Password1)</div>
+      </div>
+      <div id="login-pwd" style="display:none">
+        <div class="pwd-caducat" style="margin-bottom:12px">⚠ La teva contrasenya caduca aviat. Cal renovar-la ara.</div>
+        <div class="field" style="margin-bottom:12px">
+          <label class="lbl">Nova contrasenya</label>
+          <input id="inp-new1" class="inp" type="password" placeholder="Mínim 10 caràcters" />
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label class="lbl">Repeteix la contrasenya</label>
+          <input id="inp-new2" class="inp" type="password" placeholder="Repeteix" />
+          <div class="pwd-hint">10–20 caràcters · 1 majúscula · 1 minúscula · 1 número</div>
+        </div>
+        <div id="pwd-err" class="err-box" style="display:none;margin-bottom:12px"></div>
+        <button class="btn-blue" id="btn-canvi">Actualitzar contrasenya</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       CAIXES
+  ═══════════════════════════════════════════════════ -->
+  <div id="s-caixes" class="screen">
+    <header class="hdr">
+      <span class="hdr-title">SteriControl <span class="hdr-vh">VH</span></span>
+      <div class="hdr-right">
+        <button class="ghost-btn" id="btn-hist">📄 Historial <span class="badge" id="hist-count" style="display:none">0</span></button>
+        <span class="hdr-user" id="hdr-user-nom">—</span>
+      </div>
+    </header>
+    <div class="body">
+      <div class="scan-zone">
+        <div class="scan-top">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75V16.5zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"/></svg>
+          <span class="scan-txt">Escaneja el codi de barres de la caixa</span>
+        </div>
+        <input id="scan-inp" class="scan-inp" placeholder="o escriu el codi i prem Enter..." autocomplete="off" />
+        <div id="scan-msg" class="scan-msg"></div>
+      </div>
+      <input id="cerca-inp" class="search-inp" placeholder="Cerca per nom, codi o servei..." />
+      <div id="caixes-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MUNTATGE
+  ═══════════════════════════════════════════════════ -->
+  <div id="s-muntatge" class="screen">
+    <header class="hdr">
+      <button class="back-btn" id="btn-back-munt">← Caixes</button>
+      <span class="hdr-title" id="munt-title" style="font-size:12px">—</span>
+      <span class="hdr-user" id="munt-id">—</span>
+    </header>
+    <div class="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
+    <div class="body">
+      <div id="ext-alert" class="ext-alert" style="display:none">📦 Material de préstec extern</div>
+      <div class="stats-row">
+        <div class="stat-box"><span class="stat-n" id="st-total" style="color:var(--navy)">0</span><span class="stat-l">Total</span></div>
+        <div class="stat-box"><span class="stat-n" id="st-ok"    style="color:var(--green)">0</span><span class="stat-l">✓ OK</span></div>
+        <div class="stat-box"><span class="stat-n" id="st-inc"   style="color:var(--red)">0</span><span class="stat-l">⚠ Inc.</span></div>
+        <div class="stat-box"><span class="stat-n" id="st-pend"  style="color:var(--slate)">0</span><span class="stat-l">Pend.</span></div>
+      </div>
+      <div class="foto-card" id="foto-card" onclick="toggleFoto()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
+        <span class="foto-txt" id="foto-txt">Capturar fotografia de la caixa</span>
+      </div>
+      <div class="sec-lbl">Instrumental — verifica cada unitat individualment</div>
+      <div id="instrumental-list"></div>
+      <button class="btn-fi" id="btn-fi" style="display:none" onclick="finalitzar()">Tancar caixa</button>
+      <div class="pend-msg" id="pend-msg"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       RESULTAT
+  ═══════════════════════════════════════════════════ -->
+  <div id="s-resultat" class="screen">
+    <header class="hdr"><span class="hdr-title">Registre completat</span></header>
+    <div class="body" id="resultat-body"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       HISTORIAL
+  ═══════════════════════════════════════════════════ -->
+  <div id="s-historial" class="screen">
+    <header class="hdr">
+      <button class="back-btn" id="btn-back-hist">← Caixes</button>
+      <span class="hdr-title">Historial</span>
+      <span class="hdr-user" id="hist-count-hdr">0 registres</span>
+    </header>
+    <div class="body" id="historial-body"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MODAL INCIDÈNCIA
+  ═══════════════════════════════════════════════════ -->
+  <div class="overlay" id="modal-overlay" onclick="tancarModal(event)">
+    <div class="modal-card">
+      <div class="modal-title">Registrar incidència</div>
+      <div class="modal-sub"  id="m-nom">—</div>
+      <div class="modal-ref"  id="m-ref">—</div>
+      <div class="crit-warn"  id="m-crit" style="display:none">⚠ Instrument crític — la caixa quedarà BLOQUEJADA</div>
+      <div class="sec-lbl">Motiu</div>
+      <div id="motius-list"></div>
+      <div class="modal-btns">
+        <button class="btn-gray" onclick="tancarModal()">Cancel·lar</button>
+        <button class="btn-blue" style="flex:1" onclick="guardarIncidencia()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// DADES
+// ══════════════════════════════════════════════════════════════════════════════
+const USUARIS = [
+  { dni:"12345678A", nom:"FLORES BERNABE, FRANCISCO", rol:"TCAE",       pwd_dies:45 },
+  { dni:"87654321B", nom:"GARCIA LOPEZ, MARTA",        rol:"TCAE",       pwd_dies:90 },
+  { dni:"11223344C", nom:"MARTINEZ PUIG, ANNA",         rol:"Supervisora", pwd_dies:20 },
+];
+
+const MOTIUS = ["En reparació","Extraviado","Retingut a quiròfan","Pendent d'esterilització","Contaminat","Deteriorat / trencat","Material extern pendent","Altre"];
+
+const CAIXES = [
+  { id:"00115170", nom:"PINÇA BIPOLAR NEONATS HMI", servei:"CIR. PEDIATRICA HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:true, tipus:"propi",
+    instrumental:[
+      {id:"g-001",nom:"Pinça bipolar neonatal recta",quant:2,critic:true},
+      {id:"g-002",nom:"Pinça bipolar neonatal corba",quant:2,critic:true},
+      {id:"g-003",nom:"Cable bipolar connexió",quant:1,critic:true},
+      {id:"g-004",nom:"Suport pinça bipolar",quant:1,critic:false},
+    ]},
+  { id:"00004808", nom:"MICRO HEPATO-BILIAR HMI", servei:"CIR. PEDIATRICA HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:true, tipus:"propi",
+    instrumental:[
+      {id:"g-101",nom:"Pinça Kelly micro corba",quant:4,critic:false},
+      {id:"g-102",nom:"Tijera Metzenbaum micro",quant:2,critic:false},
+      {id:"g-103",nom:"Portaagulles Castroviejo",quant:2,critic:true},
+      {id:"g-104",nom:"Separador hepatobiliar",quant:1,critic:true},
+      {id:"g-105",nom:"Pinça DeBakey fina",quant:4,critic:false},
+      {id:"g-106",nom:"Aspirador Frazier 7Fr",quant:2,critic:false},
+    ]},
+  { id:"00115166", nom:"PINÇA BIPOLAR ONCO-PEDIATRIA HMI", servei:"CIR. PEDIATRICA HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:true, tipus:"propi",
+    instrumental:[
+      {id:"g-201",nom:"Pinça bipolar oncologia pediàtrica",quant:2,critic:true},
+      {id:"g-202",nom:"Cable bipolar llarg",quant:1,critic:true},
+      {id:"g-203",nom:"Adaptador connector bipolar",quant:1,critic:false},
+    ]},
+  { id:"00099664", nom:"CURES 02 HMI", servei:"CIR. PEDIATRICA HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:false, tipus:"propi",
+    instrumental:[
+      {id:"g-301",nom:"Pinça Kocher recta",quant:4,critic:false},
+      {id:"g-302",nom:"Pinça Kelly recta",quant:4,critic:false},
+      {id:"g-303",nom:"Tijera Mayo recta",quant:2,critic:false},
+      {id:"g-304",nom:"Portaagulles Hegar",quant:2,critic:false},
+      {id:"g-305",nom:"Pinça Backhaus camp",quant:6,critic:false},
+    ]},
+  { id:"102103T00090", nom:"CURES 03 HMI", servei:"CIR. PEDIATRICA HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:false, tipus:"propi",
+    instrumental:[
+      {id:"g-401",nom:"Pinça Kocher recta",quant:4,critic:false},
+      {id:"g-402",nom:"Pinça Allis",quant:2,critic:false},
+      {id:"g-403",nom:"Tijera Metzenbaum corba",quant:2,critic:false},
+      {id:"g-404",nom:"Portaagulles Mayo-Hegar",quant:2,critic:false},
+    ]},
+  { id:"00012097", nom:"MOTOR FRESAT CONMED 01 HMI", servei:"ORL HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:true, tipus:"propi",
+    instrumental:[
+      {id:"g-501",nom:"Motor fresat CONMED",quant:1,critic:true},
+      {id:"g-502",nom:"Peça de mà fresat recta",quant:1,critic:true},
+      {id:"g-503",nom:"Peça de mà fresat angulada",quant:1,critic:false},
+      {id:"g-504",nom:"Cable connexió motor",quant:1,critic:true},
+      {id:"g-505",nom:"Pedal activació",quant:1,critic:false},
+    ]},
+  { id:"00092852", nom:"ABDOMINAL-VAGINAL 01 gine HMI", servei:"GINECOLOGIA HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:false, tipus:"propi",
+    instrumental:[
+      {id:"g-601",nom:"Separador Doyen",quant:2,critic:true},
+      {id:"g-602",nom:"Pinça Kocher recta",quant:6,critic:false},
+      {id:"g-603",nom:"Pinça Kelly corba",quant:6,critic:false},
+      {id:"g-604",nom:"Tijera Mayo recta",quant:2,critic:false},
+      {id:"g-605",nom:"Tijera Metzenbaum corba",quant:2,critic:false},
+      {id:"g-606",nom:"Portaagulles Hegar gran",quant:2,critic:false},
+      {id:"g-607",nom:"Pinça Backhaus",quant:8,critic:false},
+    ]},
+  { id:"00097073", nom:"LAPAROSCOPIA AVANÇADA 05 gine HMI", servei:"GINECOLOGIA HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:false, tipus:"propi",
+    instrumental:[
+      {id:"g-701",nom:"Tròcar 5mm",quant:3,critic:false},
+      {id:"g-702",nom:"Tròcar 10mm",quant:2,critic:false},
+      {id:"g-703",nom:"Pinça grasper 5mm",quant:2,critic:false},
+      {id:"g-704",nom:"Tijera laparoscòpica 5mm",quant:1,critic:false},
+      {id:"g-705",nom:"Portaagulles laparoscòpic",quant:1,critic:false},
+      {id:"g-706",nom:"Suction-irrigació 5mm",quant:1,critic:false},
+    ]},
+  { id:"ESB9209N-001334", nom:"EXPEDESA ESCOLIOSIS 13", servei:"TRAUMATOLOGIA HMI", destino:"QUIROFANO SEMISOTANO HMI", critica:true, tipus:"extern", empresa:"OrthoKit / Expedesa", ref_externa:"ESB9209N",
+    instrumental:[
+      {id:"g-801",nom:"Implant cargol pedicular L1",quant:4,critic:true},
+      {id:"g-802",nom:"Implant cargol pedicular L2",quant:4,critic:true},
+      {id:"g-803",nom:"Barra titanium 40cm",quant:2,critic:true},
+      {id:"g-804",nom:"Connector transversal",quant:2,critic:false},
+      {id:"g-805",nom:"Destornillador hexagonal",quant:1,critic:false},
+      {id:"g-806",nom:"Tornavís de compressió",quant:1,critic:false},
+    ]},
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ESTAT GLOBAL
+// ══════════════════════════════════════════════════════════════════════════════
+let state = {
+  user: null,
+  caixa: null,
+  items: [],      // {uid, grupoId, nom, unitat, critic, estat:null|"ok"|motiu}
+  foto: false,
+  registres: [],
+  modalUid: null,
+  motiuSel: MOTIUS[0],
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════════════════
+function now() {
+  return new Date().toLocaleString("ca-ES",{dateStyle:"short",timeStyle:"short"});
+}
+function validarPwd(p) {
+  if (p.length < 10) return "Mínim 10 caràcters";
+  if (p.length > 20) return "Màxim 20 caràcters";
+  if (!/[A-Z]/.test(p)) return "Mínim una majúscula";
+  if (!/[a-z]/.test(p)) return "Mínim una minúscula";
+  if (!/[0-9]/.test(p)) return "Mínim un número";
+  return null;
+}
+function estatColor(e) {
+  if (e==="completa")   return "#16a34a";
+  if (e==="incompleta") return "#d97706";
+  if (e==="bloquejada") return "#dc2626";
+  return "#64748b";
+}
+function calcEstat(items) {
+  if (items.every(i=>i.estat==="ok")) return "completa";
+  if (items.some(i=>i.critic && i.estat && i.estat!=="ok")) return "bloquejada";
+  if (items.some(i=>i.estat && i.estat!=="ok")) return "incompleta";
+  return "pendent";
+}
+function expandir(caixa) {
+  const out=[];
+  caixa.instrumental.forEach(g=>{
+    for(let i=1;i<=g.quant;i++){
+      out.push({uid:`${g.id}-u${i}`,grupoId:g.id,nom:g.nom,unitat:g.quant>1?`${i}/${g.quant}`:null,critic:g.critic,estat:null});
+    }
+  });
+  return out;
+}
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════════════════════
+document.getElementById("btn-show").addEventListener("click",()=>{
+  const inp=document.getElementById("inp-pass");
+  const btn=document.getElementById("btn-show");
+  inp.type=inp.type==="password"?"text":"password";
+  btn.textContent=inp.type==="password"?"Veure":"Oculta";
+});
+document.getElementById("inp-pass").addEventListener("keydown",e=>{ if(e.key==="Enter") login(); });
+document.getElementById("inp-dni").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("inp-pass").focus(); });
+document.getElementById("btn-login").addEventListener("click", login);
+document.getElementById("btn-canvi").addEventListener("click", canviPassword);
+
+function login() {
+  const dni=document.getElementById("inp-dni").value.trim().toUpperCase();
+  const pass=document.getElementById("inp-pass").value;
+  const errEl=document.getElementById("login-err");
+  const u=USUARIS.find(x=>x.dni===dni);
+  if(!u){ errEl.textContent="DNI no trobat al sistema."; errEl.style.display="block"; return; }
+  const e=validarPwd(pass);
+  if(e){ errEl.textContent=e; errEl.style.display="block"; return; }
+  errEl.style.display="none";
+  if(u.pwd_dies < 30){
+    document.getElementById("login-normal").style.display="none";
+    document.getElementById("login-pwd").style.display="block";
+    return;
+  }
+  state.user=u;
+  initCaixes();
+  showScreen("s-caixes");
+}
+
+function canviPassword() {
+  const p1=document.getElementById("inp-new1").value;
+  const p2=document.getElementById("inp-new2").value;
+  const errEl=document.getElementById("pwd-err");
+  const e=validarPwd(p1);
+  if(e){ errEl.textContent=e; errEl.style.display="block"; return; }
+  if(p1!==p2){ errEl.textContent="Les contrasenyes no coincideixen."; errEl.style.display="block"; return; }
+  const dni=document.getElementById("inp-dni").value.trim().toUpperCase();
+  state.user=USUARIS.find(x=>x.dni===dni);
+  initCaixes();
+  showScreen("s-caixes");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CAIXES
+// ══════════════════════════════════════════════════════════════════════════════
+function initCaixes() {
+  document.getElementById("hdr-user-nom").textContent=state.user.nom.split(",")[0];
+  renderCaixes("");
+  document.getElementById("cerca-inp").value="";
+  document.getElementById("scan-inp").value="";
+  document.getElementById("scan-msg").style.display="none";
+}
+
+document.getElementById("cerca-inp").addEventListener("input",e=>renderCaixes(e.target.value));
+document.getElementById("scan-inp").addEventListener("keydown",e=>{
+  if(e.key==="Enter") processarScan(e.target.value.trim());
+});
+document.getElementById("btn-hist").addEventListener("click",()=>{ renderHistorial(); showScreen("s-historial"); });
+document.getElementById("btn-back-hist").addEventListener("click",()=>showScreen("s-caixes"));
+
+function processarScan(codi) {
+  if(!codi) return;
+  const c=CAIXES.find(x=>x.id===codi||x.ref_externa===codi);
+  const msg=document.getElementById("scan-msg");
+  if(c){
+    msg.textContent=`✓ Caixa trobada: ${c.nom}`;
+    msg.className="scan-msg ok"; msg.style.display="block";
+    setTimeout(()=>{ msg.style.display="none"; document.getElementById("scan-inp").value=""; abrirCaixa(c); },700);
+  } else {
+    msg.textContent=`Codi no reconegut: ${codi}`;
+    msg.className="scan-msg err"; msg.style.display="block";
+    setTimeout(()=>{ msg.style.display="none"; document.getElementById("scan-inp").value=""; },2000);
+  }
+}
+
+function renderCaixes(filtre) {
+  const f=filtre.toLowerCase();
+  const filtrades=CAIXES.filter(c=>
+    c.nom.toLowerCase().includes(f)||
+    c.servei.toLowerCase().includes(f)||
+    c.id.toLowerCase().includes(f)
+  );
+  const serveis={};
+  filtrades.forEach(c=>{ if(!serveis[c.servei]) serveis[c.servei]=[]; serveis[c.servei].push(c); });
+  let html="";
+  Object.entries(serveis).forEach(([s,cs])=>{
+    html+=`<div class="sec-lbl">${s}</div>`;
+    cs.forEach(c=>{
+      const total=c.instrumental.reduce((a,i)=>a+i.quant,0);
+      html+=`<button class="caixa-card" onclick="abrirCaixa(CAIXES.find(x=>x.id==='${c.id}'))">
+        <div class="caixa-top">
+          <span class="caixa-nom">${c.nom}</span>
+          <div class="caixa-badges">
+            ${c.critica?`<span class="crit-bdg">CRÍTICA</span>`:""}
+            ${c.tipus==="extern"?`<span class="ext-bdg">EXTERN</span>`:""}
+          </div>
+        </div>
+        <div class="caixa-meta">
+          <span style="font-family:monospace;font-size:11px">${c.id}</span>
+          <span class="dot">·</span><span>${total} peces</span>
+          ${c.empresa?`<span class="dot">·</span><span style="color:var(--purple)">${c.empresa}</span>`:""}
+        </div>
+      </button>`;
+    });
+  });
+  document.getElementById("caixes-list").innerHTML=html;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MUNTATGE
+// ══════════════════════════════════════════════════════════════════════════════
+function abrirCaixa(c) {
+  state.caixa=c;
+  state.items=expandir(c);
+  state.foto=false;
+  document.getElementById("munt-title").textContent=c.nom;
+  document.getElementById("munt-id").textContent=c.id;
+  const extAlert=document.getElementById("ext-alert");
+  if(c.tipus==="extern"){ extAlert.textContent=`📦 Material de préstec extern · ${c.empresa} · Ref: ${c.ref_externa||c.id}`; extAlert.style.display="flex"; }
+  else extAlert.style.display="none";
+  document.getElementById("foto-card").classList.remove("done");
+  document.getElementById("foto-txt").textContent="Capturar fotografia de la caixa";
+  renderMuntatge();
+  showScreen("s-muntatge");
+}
+
+document.getElementById("btn-back-munt").addEventListener("click",()=>showScreen("s-caixes"));
+
+function toggleFoto() {
+  state.foto=true;
+  const card=document.getElementById("foto-card");
+  card.classList.add("done");
+  document.getElementById("foto-txt").textContent=`✓ Evidència fotogràfica registrada · ${now()}`;
+}
+
+function renderMuntatge() {
+  const items=state.items;
+  const nOk=items.filter(i=>i.estat==="ok").length;
+  const nInc=items.filter(i=>i.estat&&i.estat!=="ok").length;
+  const nPend=items.filter(i=>!i.estat).length;
+  const total=items.length;
+  const pct=Math.round(nOk/total*100);
+
+  document.getElementById("st-total").textContent=total;
+  document.getElementById("st-ok").textContent=nOk;
+  document.getElementById("st-inc").textContent=nInc;
+  document.getElementById("st-pend").textContent=nPend;
+  document.getElementById("prog-bar").style.width=pct+"%";
+  document.getElementById("prog-bar").style.background=pct===100?"#16a34a":"#2563eb";
+
+  // Agrupa per grupoId
+  const grups={};
+  items.forEach(i=>{ if(!grups[i.grupoId]) grups[i.grupoId]={nom:i.nom,critic:i.critic,unitats:[]}; grups[i.grupoId].unitats.push(i); });
+
+  let html="";
+  Object.values(grups).forEach(g=>{
+    html+=`<div class="grup-wrap">
+      <div class="grup-hdr">
+        <span class="grup-nom">${g.nom}</span>
+        ${g.critic?`<span class="crit-dot">●</span>`:""}
+        <span class="grup-cnt">${g.unitats.length} ud.</span>
+      </div>`;
+    g.unitats.forEach(item=>{
+      const isOk=item.estat==="ok";
+      const isInc=item.estat&&item.estat!=="ok";
+      html+=`<div class="unit-row ${isOk?"ok":isInc?"inc":""}" id="row-${item.uid}">
+        <div class="unit-left">
+          <div class="unit-dot ${isOk?"ok":isInc?"inc":""}" id="dot-${item.uid}">
+            ${isOk?"✓":isInc?"✗":""}
+          </div>
+          <div>
+            <div class="unit-nom">${item.unitat?`Unitat ${item.unitat}`:"Unitat única"}<span class="unit-id"> · ${item.uid}</span></div>
+            ${isInc?`<div class="unit-motiu">${item.estat}</div>`:`<div class="unit-pend">${isOk?"":"Sense verificar"}</div>`}
+          </div>
+        </div>
+        <div class="unit-actions">
+          <button class="act-btn ${isOk?"ok":""}" onclick="marcarOk('${item.uid}')" title="Marca com present">✓</button>
+          <button class="act-btn ${isInc?"inc":""}" onclick="obrirModal('${item.uid}')" title="Registrar incidència">✗</button>
+        </div>
+      </div>`;
+    });
+    html+="</div>";
+  });
+  document.getElementById("instrumental-list").innerHTML=html;
+
+  const llest=nPend===0;
+  const estat=calcEstat(items);
+  const btnFi=document.getElementById("btn-fi");
+  const pendMsg=document.getElementById("pend-msg");
+  if(llest){
+    btnFi.style.display="block";
+    btnFi.style.background=estat==="bloquejada"?"#991b1b":estat==="incompleta"?"#92400e":"#15803d";
+    btnFi.textContent=estat==="completa"?"✓ Tancar caixa — Completa":estat==="incompleta"?"⚠ Tancar caixa — Incompleta autoritzada":"✕ BLOQUEJADA — Material crític faltant";
+    pendMsg.style.display="none";
+  } else {
+    btnFi.style.display="none";
+    pendMsg.textContent=`Queden ${nPend} peces sense verificar`;
+    pendMsg.style.display="block";
+  }
+}
+
+function marcarOk(uid) {
+  const item=state.items.find(i=>i.uid===uid);
+  item.estat=item.estat==="ok"?null:"ok";
+  renderMuntatge();
+}
+
+function finalitzar() {
+  const estat=calcEstat(state.items);
+  const incidencies=state.items.filter(i=>i.estat&&i.estat!=="ok").map(i=>({nom:i.nom,unitat:i.unitat,motiu:i.estat}));
+  const reg={
+    id:state.caixa.id, nom:state.caixa.nom, servei:state.caixa.servei,
+    tipus:state.caixa.tipus, empresa:state.caixa.empresa,
+    operari:state.user.nom, data:now(), estat, incidencies,
+    foto:state.foto, totalEsp:state.items.length,
+    totalOk:state.items.filter(i=>i.estat==="ok").length
+  };
+  state.registres.unshift(reg);
+  renderResultat(reg);
+  showScreen("s-resultat");
+  // Actualitza badge historial
+  const cnt=state.registres.length;
+  const bdg=document.getElementById("hist-count");
+  bdg.textContent=cnt; bdg.style.display=cnt>0?"inline":"none";
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+function obrirModal(uid) {
+  state.modalUid=uid;
+  state.motiuSel=MOTIUS[0];
+  const item=state.items.find(i=>i.uid===uid);
+  document.getElementById("m-nom").textContent=`${item.nom}`;
+  document.getElementById("m-ref").textContent=`${item.uid}${item.unitat?" · Unitat "+item.unitat:""}`;
+  document.getElementById("m-crit").style.display=item.critic?"flex":"none";
+  let html="";
+  MOTIUS.forEach((m,idx)=>{
+    html+=`<button class="motiu-btn${idx===0?" sel":""}" onclick="selMotiu(this,'${m}')">${m}</button>`;
+  });
+  document.getElementById("motius-list").innerHTML=html;
+  document.getElementById("modal-overlay").classList.add("open");
+}
+
+function selMotiu(btn, motiu) {
+  document.querySelectorAll(".motiu-btn").forEach(b=>b.classList.remove("sel"));
+  btn.classList.add("sel");
+  state.motiuSel=motiu;
+}
+
+function guardarIncidencia() {
+  const item=state.items.find(i=>i.uid===state.modalUid);
+  item.estat=state.motiuSel;
+  tancarModal();
+  renderMuntatge();
+}
+
+function tancarModal(e) {
+  if(e && e.target!==document.getElementById("modal-overlay")) return;
+  document.getElementById("modal-overlay").classList.remove("open");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RESULTAT
+// ══════════════════════════════════════════════════════════════════════════════
+function renderResultat(reg) {
+  const color=estatColor(reg.estat);
+  const etiq=reg.estat==="completa"?"✓ Caixa completa":reg.estat==="incompleta"?"⚠ Incompleta autoritzada":"✕ Bloquejada — material crític faltant";
+  let html=`
+    <div class="res-card" style="border-top:4px solid ${color}">
+      <div class="res-estat" style="color:${color}">${etiq}</div>
+      <div class="res-nom">${reg.nom}</div>
+      <div class="res-meta">${reg.id} · ${reg.servei} · ${reg.data}${reg.tipus==="extern"?` · <span style="color:var(--purple)">EXTERN ${reg.empresa}</span>`:""}</div>
+    </div>
+    <div class="stats-row3">
+      <div class="stat-box"><span class="stat-n" style="color:var(--navy)">${reg.totalEsp}</span><span class="stat-l">Esperats</span></div>
+      <div class="stat-box"><span class="stat-n" style="color:var(--green)">${reg.totalOk}</span><span class="stat-l">Verificats</span></div>
+      <div class="stat-box"><span class="stat-n" style="color:var(--red)">${reg.incidencies.length}</span><span class="stat-l">Incidències</span></div>
+    </div>`;
+  if(reg.incidencies.length>0){
+    html+=`<div class="sec-lbl">Incidències registrades</div>`;
+    reg.incidencies.forEach(inc=>{
+      html+=`<div class="inc-item">
+        <div><div class="inc-nom">${inc.nom}</div>${inc.unitat?`<div class="inc-ud">Unitat ${inc.unitat}</div>`:""}</div>
+        <span class="inc-mot">${inc.motiu}</span>
+      </div>`;
+    });
+  }
+  if(reg.foto) html+=`<div class="foto-ok">📷 Evidència fotogràfica adjunta</div>`;
+  html+=`<div class="audit-box">
+    <div class="audit-tit">Registre d'auditoria</div>
+    <div class="audit-row"><span class="audit-k">Operari</span><span class="audit-v">${reg.operari}</span></div>
+    <div class="audit-row"><span class="audit-k">Data i hora</span><span class="audit-v">${reg.data}</span></div>
+    <div class="audit-row"><span class="audit-k">Estat</span><span class="audit-v" style="color:${color}">${reg.estat}</span></div>
+    <div class="audit-row"><span class="audit-k">Foto</span><span class="audit-v">${reg.foto?"Sí":"No"}</span></div>
+    <div class="audit-row"><span class="audit-k">Tipus</span><span class="audit-v">${reg.tipus==="extern"?`Extern · ${reg.empresa}`:"Propi"}</span></div>
+  </div>
+  <button class="btn-blue" onclick="showScreen('s-caixes')">Tornar a caixes</button>
+  <button class="ghost-btn" style="width:100%;justify-content:center;margin-top:8px" onclick="renderHistorial();showScreen('s-historial')">Veure historial</button>
+  <div style="height:24px"></div>`;
+  document.getElementById("resultat-body").innerHTML=html;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HISTORIAL
+// ══════════════════════════════════════════════════════════════════════════════
+function renderHistorial() {
+  const regs=state.registres;
+  document.getElementById("hist-count-hdr").textContent=`${regs.length} registres`;
+  if(regs.length===0){
+    document.getElementById("historial-body").innerHTML=`<div class="empty-state">Sense registres encara.<br>Completa el muntatge d'una caixa.</div>`;
+    return;
+  }
+  let html="";
+  regs.forEach(r=>{
+    const color=estatColor(r.estat);
+    html+=`<div class="hist-card" style="border-left-color:${color}">
+      <div class="hist-top">
+        <span class="hist-nom">${r.nom}</span>
+        <span class="hist-estat" style="color:${color};background:${color}18">${r.estat}</span>
+      </div>
+      <div class="hist-meta">${r.id} · ${r.operari} · ${r.data}</div>
+      ${r.tipus==="extern"?`<div class="hist-ext">Material extern · ${r.empresa}</div>`:""}
+      ${r.incidencies.map(i=>`<div class="hist-inc">⚠ ${i.nom}${i.unitat?` (ud. ${i.unitat})`:""} — ${i.motiu}</div>`).join("")}
+      ${r.foto?`<div class="hist-foto">📷 Foto registrada</div>`:""}
+    </div>`;
+  });
+  html+=`<div style="height:24px"></div>`;
+  document.getElementById("historial-body").innerHTML=html;
+}
+</script>
+</body>
+</html>
