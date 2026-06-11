@@ -182,7 +182,7 @@ input,textarea,select{font-family:var(--font);outline:none;}
 .auk{color:var(--slate);}
 .auv{font-weight:600;}
 
-/* ── PANELL SUPERVISORA / INFERMERIA ─────────────────────────────────── */
+/* ── PANELL SUPERVISOR / INFERMERIA ─────────────────────────────────── */
 .sup-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .sup-header{background:var(--white);border-bottom:1px solid var(--border);padding:16px 24px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .sup-title{font-size:18px;font-weight:800;color:var(--navy);}
@@ -444,10 +444,10 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const MOTIUS=["Instrumental faltant","Instrumental trencat","Instrumental deteriorat","Retingut a quiròfan","En reparació","Contaminat","Material extern pendent","Altre"];
 
-// Rols: TCAE | Infermeria | Supervisora | Admin
+// Rols: TCAE | Infermeria | Supervisor | Admin
 // TCAE      → fa registres, veu els seus del torn actual
 // Infermeria→ fa registres, veu tots del torn actual
-// Supervisora/Admin → tot + PDF
+// Supervisor/Admin → tot + PDF
 
 let G={user:null,perfil:null,caixes:[],caixaActiva:null,fotoOberta:false,fotoOberteData:null,fotoTancada:false,fotoTancadaData:null,incidencies:[],registres:[],motiuSel:MOTIUS[0]};
 
@@ -477,12 +477,12 @@ function esDinsFiltre(reg){
 }
 
 function rolLabel(r){
-  if(r==="Supervisora"||r==="Admin")return`<span class="tb-rol rol-sup">${r}</span>`;
+  if(r==="Supervisor"||r==="Admin")return`<span class="tb-rol rol-sup">${r}</span>`;
   if(r==="Infermeria")return`<span class="tb-rol rol-inf">${r}</span>`;
   return`<span class="tb-rol rol-tcae">${r||"TCAE"}</span>`;
 }
-function esSupOInf(){return["Supervisora","Admin","Infermeria"].includes(G.perfil?.rol);}
-function esSup(){return["Supervisora","Admin"].includes(G.perfil?.rol);}
+function esSupOInf(){return["Supervisor","Admin","Infermeria"].includes(G.perfil?.rol);}
+function esSup(){return["Supervisor","Admin"].includes(G.perfil?.rol);}
 
 function showContent(w){
   $("es").style.display="none";
@@ -527,9 +527,9 @@ function mostrarApp(){
   const rol=G.perfil?.rol||"TCAE";
   $("tbu").innerHTML=nom.split(",")[0].split("@")[0]+rolLabel(rol);
   renderCaixes("");
-  // Supervisora/Infermeria veu el panell directament
+  // Supervisor/Infermeria veu el panell directament
   if(esSupOInf()){
-    $("sptit").textContent=esSup()?"Tots els registres — Supervisora":"Registres del torn — Infermeria";
+    $("sptit").textContent=esSup()?"Tots els registres — Supervisor":"Registres del torn — Infermeria";
     showContent("sup");
   } else {
     showContent("empty");
@@ -765,7 +765,7 @@ function tornarACaixes(){
   else showContent("empty");
 }
 
-// ── PANELL SUPERVISORA / INFERMERIA ────────────────────────────────────
+// ── PANELL SUPERVISOR / INFERMERIA ────────────────────────────────────
 function renderSupPanel(){
   const rol=G.perfil?.rol||"TCAE";
   // Filtra registres segons rol
@@ -776,7 +776,7 @@ function renderSupPanel(){
       const torn=tornActual();
       return tornDeData(r.created_at||r.data)===torn;
     }
-    return true; // Supervisora/Admin veu tot
+    return true; // Supervisor/Admin veu tot
   });
 
   // Stats
@@ -901,7 +901,7 @@ function generarPDF(){
 
 // ── HISTORIAL ──────────────────────────────────────────────────────────
 function renderHistorial(){
-  // TCAE veu només els seus; Infermeria veu els del torn; Supervisora veu tot
+  // TCAE veu només els seus; Infermeria veu els del torn; Supervisor veu tot
   const rol=G.perfil?.rol||"TCAE";
   let regs=G.registres;
   if(rol==="TCAE"){regs=regs.filter(r=>r.operari_id===G.user.id||r.operari===G.perfil?.nom_complet);}
