@@ -6,459 +6,434 @@
 <title>SteriControl · HMI Vall d'Hebron</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --navy:#0f172a; --navy2:#1e293b; --navy3:#334155;
-  --slate:#64748b; --muted:#94a3b8; --border:#e2e8f0;
-  --bg:#f1f5f9; --white:#ffffff;
-  --blue:#2563eb; --blue2:#1d4ed8; --blue-light:#eff6ff;
-  --green:#16a34a; --green2:#f0fdf4; --green3:#86efac;
-  --amber:#d97706; --amber2:#fffbeb;
-  --red:#dc2626; --red2:#fef2f2; --red3:#fca5a5; --red4:#991b1b;
-  --purple:#7c3aed; --purple2:#f5f3ff; --purple3:#c4b5fd;
-  --font:'Inter',system-ui,-apple-system,sans-serif;
-  --sidebar-w:300px; --topbar-h:52px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#0f172a;--navy2:#1e293b;--navy3:#334155;
+  --slate:#64748b;--muted:#94a3b8;--border:#e2e8f0;
+  --bg:#f1f5f9;--white:#fff;
+  --blue:#2563eb;--blue2:#1d4ed8;--blue-light:#eff6ff;
+  --green:#16a34a;--green2:#f0fdf4;--green3:#86efac;
+  --amber:#d97706;--amber2:#fffbeb;
+  --red:#dc2626;--red2:#fef2f2;--red3:#fca5a5;--red4:#991b1b;
+  --purple:#7c3aed;--purple2:#f5f3ff;--purple3:#c4b5fd;
+  --font:'Inter',system-ui,sans-serif;
+  --sw:300px;--th:52px;
 }
 html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--navy);}
 button{font-family:var(--font);cursor:pointer;border:none;outline:none;}
-input,textarea{font-family:var(--font);outline:none;}
+input,textarea,select{font-family:var(--font);outline:none;}
 
 /* LOADING */
-#loading-overlay{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:14px;}
-#loading-overlay.hide{display:none;}
-.spinner-big{width:40px;height:40px;border:3px solid rgba(255,255,255,.15);border-top-color:#60a5fa;border-radius:50%;animation:spin .7s linear infinite;}
-.spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;}
+#lo{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:14px;}
+#lo.hide{display:none;}
+.spin-big{width:40px;height:40px;border:3px solid rgba(255,255,255,.15);border-top-color:#60a5fa;border-radius:50%;animation:spin .7s linear infinite;}
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-txt{color:var(--muted);font-size:13px;}
+.lo-txt{color:var(--muted);font-size:13px;}
 
 /* LOGIN */
-#s-login{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:100;}
-#s-login.hide{display:none;}
-.login-card{background:var(--navy2);border-radius:16px;padding:36px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:20px;box-shadow:0 25px 60px rgba(0,0,0,.4);}
-.login-head{display:flex;align-items:center;gap:14px;}
-.logo-box{width:52px;height:52px;background:var(--blue);border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:19px;flex-shrink:0;}
-.logo-title{font-size:22px;font-weight:700;color:#f1f5f9;}
-.logo-sub{font-size:12px;color:var(--slate);margin-top:2px;}
-.field{display:flex;flex-direction:column;gap:6px;}
+#sl{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:100;}
+#sl.hide{display:none;}
+.lcard{background:var(--navy2);border-radius:16px;padding:36px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:18px;box-shadow:0 25px 60px rgba(0,0,0,.4);}
+.lhead{display:flex;align-items:center;gap:14px;}
+.lbox{width:52px;height:52px;background:var(--blue);border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:19px;flex-shrink:0;}
+.ltit{font-size:22px;font-weight:700;color:#f1f5f9;}
+.lsub{font-size:12px;color:var(--slate);margin-top:2px;}
+.fld{display:flex;flex-direction:column;gap:6px;}
 .lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
 .inp{padding:11px 14px;border-radius:9px;border:1px solid var(--navy3);background:var(--navy);color:#f1f5f9;font-size:15px;width:100%;transition:border-color .2s;}
 .inp::placeholder{color:#475569;}
 .inp:focus{border-color:var(--blue);}
-.pass-wrap{position:relative;}
-.show-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;color:var(--slate);font-size:12px;}
-.pwd-hint{font-size:11px;color:#475569;margin-top:3px;}
-.err-box{background:#450a0a;color:#fca5a5;border-radius:9px;padding:10px 14px;font-size:13px;}
-.ok-box{background:#052e16;color:#86efac;border-radius:9px;padding:10px 14px;font-size:13px;}
-.login-foot{display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;justify-content:center;}
-.btn-link{background:none;color:var(--muted);font-size:13px;text-decoration:underline;padding:0;margin-top:-10px;}
-.pwd-caducat{display:flex;align-items:center;gap:7px;background:#451a03;color:#fed7aa;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:500;}
+.pw{position:relative;}
+.showb{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;color:var(--slate);font-size:12px;}
+.phint{font-size:11px;color:#475569;margin-top:3px;}
+.ebox{background:#450a0a;color:#fca5a5;border-radius:9px;padding:10px 14px;font-size:13px;}
+.obox{background:#052e16;color:#86efac;border-radius:9px;padding:10px 14px;font-size:13px;}
+.lfoot{display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;justify-content:center;}
+.blnk{background:none;color:var(--muted);font-size:13px;text-decoration:underline;padding:0;margin-top:-8px;}
+.pwcad{display:flex;align-items:center;gap:7px;background:#451a03;color:#fed7aa;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:500;}
 
 /* BUTTONS */
-.btn-primary{width:100%;padding:13px;background:var(--blue);color:#fff;border-radius:10px;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:background .15s;}
-.btn-primary:hover:not(:disabled){background:var(--blue2);}
-.btn-primary:disabled{opacity:.6;cursor:not-allowed;}
-.btn-gray{padding:10px 16px;background:var(--navy3);color:#f1f5f9;border-radius:9px;font-size:13px;font-weight:500;}
-.btn-ghost{background:none;border:1px solid var(--border);color:var(--slate);padding:7px 12px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:5px;transition:background .15s;}
-.btn-ghost:hover{background:var(--bg);}
+.bp{width:100%;padding:13px;background:var(--blue);color:#fff;border-radius:10px;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.bp:hover:not(:disabled){background:var(--blue2);}
+.bp:disabled{opacity:.6;cursor:not-allowed;}
+.bgr{padding:10px 16px;background:var(--navy3);color:#f1f5f9;border-radius:9px;font-size:13px;font-weight:500;}
+.bgh{background:none;border:1px solid var(--border);color:var(--slate);padding:7px 12px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:5px;transition:background .15s;}
+.bgh:hover{background:var(--bg);}
 
-/* APP LAYOUT */
+/* APP */
 #app{display:none;flex-direction:column;height:100vh;}
 #app.show{display:flex;}
 
-/* Topbar */
-.topbar{height:var(--topbar-h);background:var(--navy);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;}
-.topbar-logo{display:flex;align-items:center;gap:10px;}
-.topbar-sc{font-size:15px;font-weight:700;color:#f1f5f9;}
-.topbar-vh{color:#60a5fa;}
-.topbar-sep{width:1px;height:20px;background:var(--navy3);}
-.topbar-servei{font-size:12px;color:var(--muted);}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
-.topbar-user{font-size:12px;color:var(--muted);background:var(--navy2);padding:5px 10px;border-radius:6px;}
-.topbar-badge{background:var(--blue);color:#fff;border-radius:20px;font-size:10px;padding:1px 7px;margin-left:2px;}
-.topbar-btn{background:none;border:1px solid var(--navy3);color:var(--muted);font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;transition:background .15s;}
-.topbar-btn:hover{background:var(--navy2);}
+/* TOPBAR */
+.tb{height:var(--th);background:var(--navy);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;}
+.tb-sc{font-size:15px;font-weight:700;color:#f1f5f9;}
+.tb-vh{color:#60a5fa;}
+.tb-sep{width:1px;height:20px;background:var(--navy3);}
+.tb-srv{font-size:12px;color:var(--muted);}
+.tb-r{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.tb-u{font-size:12px;color:var(--muted);background:var(--navy2);padding:5px 10px;border-radius:6px;}
+.tb-rol{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;margin-left:4px;}
+.rol-tcae{background:#1e3a5f;color:#60a5fa;}
+.rol-inf{background:#14532d;color:#86efac;}
+.rol-sup{background:#3b0764;color:#c4b5fd;}
+.rol-adm{background:#450a0a;color:#fca5a5;}
+.tb-btn{background:none;border:1px solid var(--navy3);color:var(--muted);font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;transition:background .15s;}
+.tb-btn:hover{background:var(--navy2);}
+.tb-bdg{background:var(--blue);color:#fff;border-radius:20px;font-size:10px;padding:1px 7px;margin-left:2px;}
 
-.main-layout{display:flex;flex:1;overflow:hidden;}
+/* LAYOUT */
+.ml{display:flex;flex:1;overflow:hidden;}
 
 /* SIDEBAR */
-.sidebar{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
-.sidebar-header{padding:14px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.scan-zone{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;}
-.scan-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
-.scan-txt{font-size:12px;color:#374151;font-weight:600;}
-.scan-inp{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:monospace;background:var(--white);}
-.scan-inp:focus{border-color:var(--blue);}
-.scan-msg{margin-top:5px;padding:6px 9px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid;display:none;}
-.scan-msg.ok{background:var(--green2);color:#166534;border-color:var(--green3);}
-.scan-msg.err{background:var(--red2);color:var(--red4);border-color:var(--red3);}
-.search-inp{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;}
-.search-inp:focus{border-color:var(--blue);}
-.sidebar-list{flex:1;overflow-y:auto;padding:8px;}
-.sec-lbl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:10px 8px 5px;}
-.caixa-item{width:100%;text-align:left;background:var(--white);border:1px solid var(--border);border-radius:9px;padding:11px 12px;margin-bottom:6px;cursor:pointer;transition:all .15s;}
-.caixa-item:hover{border-color:var(--blue);background:var(--blue-light);}
-.caixa-item.active{border-color:var(--blue);background:var(--blue-light);box-shadow:inset 3px 0 0 var(--blue);}
-.ci-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px;}
-.ci-nom{font-size:13px;font-weight:600;color:var(--navy);flex:1;line-height:1.3;}
-.ci-badges{display:flex;gap:3px;flex-shrink:0;}
-.ci-meta{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--slate);}
+.sb{width:var(--sw);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.sbh{padding:14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.scz{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;}
+.scr{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.sct{font-size:12px;color:#374151;font-weight:600;}
+.sci{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:monospace;background:var(--white);}
+.sci:focus{border-color:var(--blue);}
+.scm{margin-top:5px;padding:6px 9px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid;display:none;}
+.scm.ok{background:var(--green2);color:#166534;border-color:var(--green3);}
+.scm.err{background:var(--red2);color:var(--red4);border-color:var(--red3);}
+.sri{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;}
+.sri:focus{border-color:var(--blue);}
+.sbl{flex:1;overflow-y:auto;padding:8px;}
+.slbl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:10px 8px 5px;}
+.ci{width:100%;text-align:left;background:var(--white);border:1px solid var(--border);border-radius:9px;padding:11px 12px;margin-bottom:6px;cursor:pointer;transition:all .15s;}
+.ci:hover{border-color:var(--blue);background:var(--blue-light);}
+.ci.active{border-color:var(--blue);background:var(--blue-light);box-shadow:inset 3px 0 0 var(--blue);}
+.cit{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px;}
+.cin{font-size:13px;font-weight:600;color:var(--navy);flex:1;line-height:1.3;}
+.cib{display:flex;gap:3px;flex-shrink:0;}
+.cim{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--slate);}
 .dot{color:#cbd5e1;}
-.crit-bdg{font-size:9px;font-weight:700;color:var(--red);background:var(--red2);border:1px solid var(--red3);border-radius:4px;padding:1px 5px;white-space:nowrap;}
-.ext-bdg{font-size:9px;font-weight:700;color:var(--purple);background:var(--purple2);border:1px solid var(--purple3);border-radius:4px;padding:1px 5px;white-space:nowrap;}
+.cbcr{font-size:9px;font-weight:700;color:var(--red);background:var(--red2);border:1px solid var(--red3);border-radius:4px;padding:1px 5px;white-space:nowrap;}
+.cbex{font-size:9px;font-weight:700;color:var(--purple);background:var(--purple2);border:1px solid var(--purple3);border-radius:4px;padding:1px 5px;white-space:nowrap;}
 
 /* CONTENT */
-.content{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
-.content-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);}
-.content-empty svg{opacity:.25;}
-.content-empty-title{font-size:17px;font-weight:700;color:var(--slate);}
-.content-empty-sub{font-size:13px;text-align:center;max-width:280px;line-height:1.6;}
+.ct{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
+.ce{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);}
+.ce svg{opacity:.25;}
+.ce-t{font-size:17px;font-weight:700;color:var(--slate);}
+.ce-s{font-size:13px;text-align:center;max-width:280px;line-height:1.6;}
 
-/* REGISTRE PANEL — el flux principal */
-.reg-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.reg-header{background:var(--white);border-bottom:1px solid var(--border);padding:18px 24px;flex-shrink:0;}
-.reg-nom{font-size:20px;font-weight:800;color:var(--navy);}
-.reg-sub{font-size:12px;color:var(--slate);margin-top:3px;}
-.reg-badges{display:flex;gap:6px;margin-top:8px;}
-.reg-body{flex:1;overflow-y:auto;padding:20px 24px;}
+/* REGISTRE */
+.rp{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.rph{background:var(--white);border-bottom:1px solid var(--border);padding:18px 24px;flex-shrink:0;}
+.rpn{font-size:20px;font-weight:800;color:var(--navy);}
+.rps{font-size:12px;color:var(--slate);margin-top:3px;}
+.rpb{display:flex;gap:6px;margin-top:8px;}
+.rpbody{flex:1;overflow-y:auto;padding:20px 24px;}
 
 /* Steps */
-.steps-wrap{display:flex;align-items:center;gap:0;margin-bottom:24px;}
-.step{display:flex;align-items:center;gap:8px;flex:1;}
-.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;border:2px solid var(--border);background:var(--white);color:var(--muted);transition:all .3s;}
-.step-dot.done{background:var(--green);border-color:var(--green);color:#fff;}
-.step-dot.active{background:var(--blue);border-color:var(--blue);color:#fff;}
-.step-lbl{font-size:12px;font-weight:500;color:var(--muted);}
-.step-lbl.active{color:var(--blue);font-weight:700;}
-.step-lbl.done{color:var(--green);}
-.step-line{flex:1;height:2px;background:var(--border);margin:0 8px;transition:background .3s;}
-.step-line.done{background:var(--green);}
+.stw{display:flex;align-items:center;gap:0;margin-bottom:24px;}
+.st{display:flex;align-items:center;gap:8px;flex:1;}
+.std{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;border:2px solid var(--border);background:var(--white);color:var(--muted);transition:all .3s;}
+.std.done{background:var(--green);border-color:var(--green);color:#fff;}
+.std.act{background:var(--blue);border-color:var(--blue);color:#fff;}
+.stl{font-size:12px;font-weight:500;color:var(--muted);}
+.stl.act{color:var(--blue);font-weight:700;}
+.stl.done{color:var(--green);}
+.stln{flex:1;height:2px;background:var(--border);margin:0 8px;transition:background .3s;}
+.stln.done{background:var(--green);}
 
-/* Foto cards */
-.foto-section{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
-.foto-card{background:var(--white);border:2px dashed var(--border);border-radius:12px;padding:20px;cursor:pointer;text-align:center;transition:all .2s;}
-.foto-card:hover:not(.done){border-color:var(--blue);background:var(--blue-light);}
-.foto-card.done{border-color:var(--green3);background:var(--green2);border-style:solid;}
-.foto-card.pendent-obligat{border-color:var(--red3);background:var(--red2);}
-.foto-icon{font-size:32px;margin-bottom:8px;}
-.foto-label{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px;}
-.foto-card.done .foto-label{color:var(--green);}
-.foto-estat{font-size:12px;color:var(--muted);}
-.foto-card.done .foto-estat{color:#15803d;font-weight:500;}
+/* Fotos */
+.fts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.ftc{background:var(--white);border:2px dashed var(--border);border-radius:12px;padding:20px;cursor:pointer;text-align:center;transition:all .2s;}
+.ftc:hover:not(.done){border-color:var(--blue);background:var(--blue-light);}
+.ftc.done{border-color:var(--green3);background:var(--green2);border-style:solid;}
+.fti{font-size:32px;margin-bottom:8px;}
+.ftlb{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px;}
+.ftc.done .ftlb{color:var(--green);}
+.ftes{font-size:12px;color:var(--muted);}
+.ftc.done .ftes{color:#15803d;font-weight:500;}
 
 /* Incidències */
-.inc-section{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px;}
-.inc-section-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
-.btn-add-inc{background:var(--blue-light);color:var(--blue);border:1px solid #bfdbfe;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;}
-.btn-add-inc:hover{background:#dbeafe;}
-.inc-item-reg{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--red2);border:1px solid var(--red3);border-radius:8px;margin-bottom:6px;}
-.inc-item-reg-info{flex:1;}
-.inc-item-reg-nom{font-size:13px;font-weight:600;color:var(--navy);}
-.inc-item-reg-mot{font-size:12px;color:var(--red);}
-.btn-del-inc{background:none;color:var(--muted);font-size:16px;padding:2px 6px;border-radius:4px;}
-.btn-del-inc:hover{color:var(--red);background:var(--red2);}
-.inc-empty{font-size:13px;color:var(--muted);text-align:center;padding:12px;font-style:italic;}
+.ins{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px;}
+.inst{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.bai{background:var(--blue-light);color:var(--blue);border:1px solid #bfdbfe;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;}
+.bai:hover{background:#dbeafe;}
+.inir{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--red2);border:1px solid var(--red3);border-radius:8px;margin-bottom:6px;}
+.inirf{flex:1;}
+.inirn{font-size:13px;font-weight:600;color:var(--navy);}
+.inirm{font-size:12px;color:var(--red);}
+.bdi{background:none;color:var(--muted);font-size:16px;padding:2px 6px;border-radius:4px;}
+.bdi:hover{color:var(--red);}
+.ine{font-size:13px;color:var(--muted);text-align:center;padding:12px;font-style:italic;}
 
 /* Footer */
-.reg-footer{background:var(--white);border-top:1px solid var(--border);padding:14px 24px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.footer-info{font-size:13px;color:var(--muted);}
-.footer-info strong{color:var(--navy);}
-.btn-tancar{padding:13px 28px;color:#fff;border-radius:10px;font-size:14px;font-weight:700;transition:background .15s;}
-.btn-tancar:disabled{opacity:.4;cursor:not-allowed;}
+.rpf{background:var(--white);border-top:1px solid var(--border);padding:14px 24px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.rfi{font-size:13px;color:var(--muted);}
+.rfi strong{color:var(--navy);}
+.btanc{padding:13px 28px;color:#fff;border-radius:10px;font-size:14px;font-weight:700;transition:background .15s;}
+.btanc:disabled{opacity:.4;cursor:not-allowed;}
 
 /* Resultat */
-.resultat-wrap{flex:1;overflow-y:auto;padding:24px;}
-.res-hero{background:var(--white);border-radius:12px;padding:20px 24px;margin-bottom:16px;border-top:4px solid;}
-.res-estat{font-size:15px;font-weight:700;margin-bottom:4px;}
-.res-nom{font-size:22px;font-weight:800;color:var(--navy);}
-.res-meta{font-size:12px;color:var(--slate);margin-top:4px;}
-.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.res-bloc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;}
-.res-bloc-tit{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
-.res-foto-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--navy);margin-bottom:4px;}
-.res-inc-item{display:flex;justify-content:space-between;background:var(--red2);border:1px solid var(--red3);border-radius:8px;padding:9px 12px;margin-bottom:6px;}
-.audit-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;}
-.audit-tit{font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
-.audit-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border);}
-.audit-row:last-child{border-bottom:none;}
-.audit-k{color:var(--slate);}
-.audit-v{font-weight:600;}
-.res-actions{display:flex;gap:10px;}
+.resw{flex:1;overflow-y:auto;padding:24px;}
+.resh{background:var(--white);border-radius:12px;padding:20px 24px;margin-bottom:16px;border-top:4px solid;}
+.resg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.resb{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.resbt{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.aub{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;}
+.aut{font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.aur{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border);}
+.aur:last-child{border-bottom:none;}
+.auk{color:var(--slate);}
+.auv{font-weight:600;}
+
+/* ── PANELL SUPERVISORA / INFERMERIA ─────────────────────────────────── */
+.sup-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.sup-header{background:var(--white);border-bottom:1px solid var(--border);padding:16px 24px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.sup-title{font-size:18px;font-weight:800;color:var(--navy);}
+.sup-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sup-sel{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--white);color:var(--navy);}
+.sup-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.sup-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.sup-stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+.ss-n{font-size:26px;font-weight:800;display:block;}
+.ss-l{font-size:11px;color:var(--muted);}
+.sup-table{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.st-hdr{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0;background:var(--bg);border-bottom:1px solid var(--border);padding:10px 16px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.st-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0;padding:12px 16px;border-bottom:1px solid #f8fafc;align-items:center;transition:background .1s;}
+.st-row:hover{background:var(--bg);}
+.st-row:last-child{border-bottom:none;}
+.st-nom{font-size:13px;font-weight:600;color:var(--navy);}
+.st-sub{font-size:11px;color:var(--muted);}
+.st-estat{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;}
+.st-foto{font-size:12px;}
+.btn-pdf{background:var(--purple2);color:var(--purple);border:1px solid var(--purple3);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.btn-pdf:hover{background:var(--purple3);}
 
 /* Historial */
-#historial-panel{position:fixed;top:var(--topbar-h);right:0;bottom:0;width:380px;background:var(--white);border-left:1px solid var(--border);z-index:50;display:none;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.08);}
-#historial-panel.show{display:flex;}
-.hist-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
-.hist-panel-tit{font-size:15px;font-weight:700;}
-.hist-panel-body{flex:1;overflow-y:auto;padding:12px;}
-.hist-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;border-left-width:3px;}
-.hist-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;}
-.hist-nom{font-size:13px;font-weight:600;flex:1;margin-right:8px;}
-.hist-estat{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;}
-.hist-meta{font-size:11px;color:var(--muted);}
-.hist-inc{font-size:11px;color:#92400e;background:var(--amber2);border-radius:5px;padding:3px 7px;margin-top:4px;}
-.hist-foto{font-size:11px;color:#166534;margin-top:3px;}
-.empty-hist{text-align:center;color:var(--muted);font-size:13px;margin-top:60px;line-height:1.8;}
+#hp{position:fixed;top:var(--th);right:0;bottom:0;width:380px;background:var(--white);border-left:1px solid var(--border);z-index:50;display:none;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.08);}
+#hp.show{display:flex;}
+.hph{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.hpt{font-size:15px;font-weight:700;}
+.hpb{flex:1;overflow-y:auto;padding:12px;}
+.hc{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;border-left-width:3px;}
+.hct{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;}
+.hcn{font-size:13px;font-weight:600;flex:1;margin-right:8px;}
+.hce{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.hcm{font-size:11px;color:var(--muted);}
+.hci{font-size:11px;color:#92400e;background:var(--amber2);border-radius:5px;padding:3px 7px;margin-top:4px;}
+.hcf{font-size:11px;color:#166534;margin-top:3px;}
+.ehist{text-align:center;color:var(--muted);font-size:13px;margin-top:60px;line-height:1.8;}
 
-/* Modal incidència */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
-.overlay.open{display:flex;}
-.modal-card{background:var(--white);border-radius:14px;padding:24px;width:100%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.2);}
-.modal-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:16px;}
-.motiu-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
-.motiu-btn{padding:10px 12px;border-radius:8px;text-align:left;font-size:13px;font-weight:500;background:#f1f5f9;color:var(--navy);transition:all .15s;border:1.5px solid transparent;}
-.motiu-btn:hover{background:var(--border);}
-.motiu-btn.sel{background:var(--blue-light);color:var(--blue2);border-color:var(--blue);}
-.inc-desc-inp{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:12px;resize:vertical;}
-.inc-desc-inp:focus{border-color:var(--blue);}
-.modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
-.modal-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
-.modal-btns{display:flex;gap:8px;}
+/* Modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.ov.open{display:flex;}
+.mc{background:var(--white);border-radius:14px;padding:24px;width:100%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.2);}
+.mt{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:16px;}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+.mb{padding:10px 12px;border-radius:8px;text-align:left;font-size:13px;font-weight:500;background:#f1f5f9;color:var(--navy);transition:all .15s;border:1.5px solid transparent;}
+.mb:hover{background:var(--border);}
+.mb.sel{background:var(--blue-light);color:var(--blue2);border-color:var(--blue);}
+.mta{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:12px;resize:vertical;}
+.mta:focus{border-color:var(--blue);}
+.mfl{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.mbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.mbs{display:flex;gap:8px;}
 
 /* Càmera */
-.camera-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;z-index:300;flex-direction:column;gap:14px;}
-.camera-overlay.open{display:flex;}
-.camera-title{color:#fff;font-size:17px;font-weight:700;}
-.camera-sub{color:var(--muted);font-size:13px;margin-top:-8px;}
-.camera-wrap{position:relative;border-radius:12px;overflow:hidden;background:#000;border:2px solid var(--navy3);}
-#camera-video{display:block;width:600px;max-width:90vw;height:auto;}
-#camera-canvas{display:none;}
-.camera-preview{width:600px;max-width:90vw;border-radius:12px;border:2px solid var(--green3);display:none;}
-.camera-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
-.btn-capture{padding:12px 24px;background:var(--blue);color:#fff;border-radius:10px;font-size:14px;font-weight:700;}
-.btn-capture:hover{background:var(--blue2);}
-.btn-acceptar{padding:12px 24px;background:var(--green);color:#fff;border-radius:10px;font-size:14px;font-weight:700;display:none;}
-.btn-repetir{padding:12px 24px;background:var(--navy3);color:#fff;border-radius:10px;font-size:14px;font-weight:500;display:none;}
-.btn-cancelar-cam{padding:12px 24px;background:transparent;color:var(--muted);border-radius:10px;font-size:14px;border:1px solid var(--navy3);}
+.camo{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;z-index:300;flex-direction:column;gap:14px;}
+.camo.open{display:flex;}
+.cat{color:#fff;font-size:17px;font-weight:700;}
+.cas{color:var(--muted);font-size:13px;margin-top:-8px;}
+.caw{position:relative;border-radius:12px;overflow:hidden;background:#000;border:2px solid var(--navy3);}
+#cvid{display:block;width:600px;max-width:90vw;height:auto;}
+#ccan{display:none;}
+.cprev{width:600px;max-width:90vw;border-radius:12px;border:2px solid var(--green3);display:none;}
+.camb{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.bcap{padding:12px 24px;background:var(--blue);color:#fff;border-radius:10px;font-size:14px;font-weight:700;}
+.bcap:hover{background:var(--blue2);}
+.bacc{padding:12px 24px;background:var(--green);color:#fff;border-radius:10px;font-size:14px;font-weight:700;display:none;}
+.brep{padding:12px 24px;background:var(--navy3);color:#fff;border-radius:10px;font-size:14px;font-weight:500;display:none;}
+.bcan{padding:12px 24px;background:transparent;color:var(--muted);border-radius:10px;font-size:14px;border:1px solid var(--navy3);}
+
+/* PDF print */
+@media print{
+  body{background:#fff!important;}
+  .no-print{display:none!important;}
+  #pdf-content{display:block!important;}
+  .pdf-page{page-break-after:always;}
+}
+#pdf-content{display:none;}
+.pdf-page{padding:20px;font-family:Arial,sans-serif;font-size:11px;color:#000;}
+.pdf-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:10px;margin-bottom:14px;}
+.pdf-logo{font-size:18px;font-weight:900;color:#0f172a;}
+.pdf-vh{color:#2563eb;}
+.pdf-meta{font-size:10px;color:#64748b;text-align:right;}
+.pdf-reg{border:1px solid #e2e8f0;border-radius:6px;padding:12px;margin-bottom:12px;break-inside:avoid;}
+.pdf-reg-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.pdf-reg-nom{font-size:13px;font-weight:700;}
+.pdf-reg-estat{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.pdf-reg-meta{font-size:10px;color:#64748b;margin-bottom:8px;}
+.pdf-fotos{display:flex;gap:8px;margin-bottom:8px;}
+.pdf-foto{flex:1;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;}
+.pdf-foto img{width:100%;height:80px;object-fit:cover;display:block;}
+.pdf-foto-lbl{font-size:9px;color:#64748b;padding:3px 6px;background:#f8fafc;text-align:center;}
+.pdf-incs{margin-top:6px;}
+.pdf-inc{font-size:10px;color:#dc2626;padding:3px 6px;background:#fef2f2;border-radius:3px;margin-bottom:2px;}
 
 @media(max-width:768px){
-  :root{--sidebar-w:100%;}
-  .main-layout{flex-direction:column;}
-  .sidebar{width:100%;height:auto;max-height:40vh;border-right:none;border-bottom:1px solid var(--border);}
-  .foto-section{grid-template-columns:1fr;}
-  .res-grid{grid-template-columns:1fr;}
-  .motiu-grid{grid-template-columns:1fr;}
-  #historial-panel{width:100%;}
+  :root{--sw:100%;}
+  .ml{flex-direction:column;}
+  .sb{width:100%;height:auto;max-height:40vh;border-right:none;border-bottom:1px solid var(--border);}
+  .fts{grid-template-columns:1fr;}
+  .resg{grid-template-columns:1fr;}
+  .mg{grid-template-columns:1fr;}
+  .sup-stats{grid-template-columns:1fr 1fr;}
+  .st-hdr,.st-row{grid-template-columns:2fr 1fr 1fr;}
+  .st-hdr span:nth-child(4),.st-hdr span:nth-child(5),
+  .st-row div:nth-child(4),.st-row div:nth-child(5){display:none;}
+  #hp{width:100%;}
 }
 </style>
 </head>
 <body>
 
-<div id="loading-overlay">
-  <div class="spinner-big"></div>
-  <div class="loading-txt" id="loading-txt">Carregant SteriControl...</div>
-</div>
+<div id="lo"><div class="spin-big"></div><div class="lo-txt" id="lo-txt">Carregant SteriControl...</div></div>
 
 <!-- LOGIN -->
-<div id="s-login">
-  <div class="login-card">
-    <div class="login-head">
-      <div class="logo-box">SC</div>
-      <div>
-        <div class="logo-title">SteriControl</div>
-        <div class="logo-sub">Hospital Materno-Infantil · Esterilització Central</div>
-      </div>
+<div id="sl">
+  <div class="lcard">
+    <div class="lhead"><div class="lbox">SC</div><div><div class="ltit">SteriControl</div><div class="lsub">Hospital Materno-Infantil · Esterilització Central</div></div></div>
+    <div id="lf">
+      <div class="fld" style="margin-bottom:14px"><label class="lbl">Correu electrònic</label><input id="ie" class="inp" type="email" placeholder="nom@vallhebron.cat" autocomplete="email"/></div>
+      <div class="fld" style="margin-bottom:14px"><label class="lbl">Contrasenya</label><div class="pw"><input id="ip" class="inp" type="password" placeholder="Mínim 10 caràcters" style="padding-right:56px"/><button class="showb" id="bshow">Veure</button></div><div class="phint">10–20 caràcters · 1 majúscula · 1 minúscula · 1 número</div></div>
+      <div id="lmsg" style="display:none;margin-bottom:14px"></div>
+      <button class="bp" id="blog">Entrar al sistema</button>
+      <button class="blnk" id="bfgt" style="margin-top:10px">He oblidat la contrasenya</button>
+      <div class="lfoot" style="margin-top:10px">🔒 Contrasenya caduca cada 90 dies · Vall d'Hebron</div>
     </div>
-    <div id="login-form">
-      <div class="field" style="margin-bottom:14px">
-        <label class="lbl">Correu electrònic</label>
-        <input id="inp-email" class="inp" type="email" placeholder="nom@vallhebron.cat" autocomplete="email"/>
-      </div>
-      <div class="field" style="margin-bottom:14px">
-        <label class="lbl">Contrasenya</label>
-        <div class="pass-wrap">
-          <input id="inp-pass" class="inp" type="password" placeholder="Mínim 10 caràcters" style="padding-right:56px"/>
-          <button class="show-btn" id="btn-show">Veure</button>
-        </div>
-        <div class="pwd-hint">10–20 caràcters · 1 majúscula · 1 minúscula · 1 número</div>
-      </div>
-      <div id="login-msg" style="display:none;margin-bottom:14px"></div>
-      <button class="btn-primary" id="btn-login">Entrar al sistema</button>
-      <button class="btn-link" id="btn-forgot" style="margin-top:10px">He oblidat la contrasenya</button>
-      <div class="login-foot" style="margin-top:10px">🔒 Contrasenya caduca cada 90 dies · Vall d'Hebron</div>
-    </div>
-    <div id="cambio-form" style="display:none">
-      <div class="pwd-caducat" style="margin-bottom:14px">⚠ La teva contrasenya ha caducat. Cal renovar-la per continuar.</div>
-      <div class="field" style="margin-bottom:14px">
-        <label class="lbl">Nova contrasenya</label>
-        <div class="pass-wrap">
-          <input id="inp-new1" class="inp" type="password" placeholder="Mínim 10 caràcters" style="padding-right:56px"/>
-          <button class="show-btn" id="btn-show2">Veure</button>
-        </div>
-      </div>
-      <div class="field" style="margin-bottom:14px">
-        <label class="lbl">Repeteix la contrasenya</label>
-        <input id="inp-new2" class="inp" type="password" placeholder="Repeteix"/>
-        <div class="pwd-hint">10–20 caràcters · 1 majúscula · 1 minúscula · 1 número</div>
-      </div>
-      <div id="cambio-msg" style="display:none;margin-bottom:14px"></div>
-      <button class="btn-primary" id="btn-cambio">Actualitzar contrasenya</button>
+    <div id="cf" style="display:none">
+      <div class="pwcad" style="margin-bottom:14px">⚠ La teva contrasenya ha caducat. Cal renovar-la per continuar.</div>
+      <div class="fld" style="margin-bottom:14px"><label class="lbl">Nova contrasenya</label><div class="pw"><input id="in1" class="inp" type="password" placeholder="Mínim 10 caràcters" style="padding-right:56px"/><button class="showb" id="bshow2">Veure</button></div></div>
+      <div class="fld" style="margin-bottom:14px"><label class="lbl">Repeteix</label><input id="in2" class="inp" type="password" placeholder="Repeteix"/><div class="phint">10–20 caràcters · 1 majúscula · 1 minúscula · 1 número</div></div>
+      <div id="cmsg" style="display:none;margin-bottom:14px"></div>
+      <button class="bp" id="bcam">Actualitzar contrasenya</button>
     </div>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app">
-  <div class="topbar">
-    <div class="topbar-logo">
-      <div class="logo-box" style="width:34px;height:34px;font-size:13px;border-radius:8px">SC</div>
-      <span class="topbar-sc">SteriControl <span class="topbar-vh">VH</span></span>
-    </div>
-    <div class="topbar-sep"></div>
-    <span class="topbar-servei">Hospital Materno-Infantil · Esterilització Central</span>
-    <div class="topbar-right">
-      <button class="topbar-btn" id="btn-hist-toggle">📄 Historial <span class="topbar-badge" id="hist-badge" style="display:none">0</span></button>
-      <div class="topbar-user" id="topbar-user">—</div>
-      <button class="topbar-btn" id="btn-logout">Tancar sessió</button>
+  <div class="tb">
+    <div class="tb-sc">SteriControl <span class="tb-vh">VH</span></div>
+    <div class="tb-sep"></div>
+    <span class="tb-srv">Hospital Materno-Infantil · Esterilització Central</span>
+    <div class="tb-r">
+      <button class="tb-btn" id="bhist">📄 Historial <span class="tb-bdg" id="hbdg" style="display:none">0</span></button>
+      <div class="tb-u" id="tbu">—<span class="tb-rol" id="trol"></span></div>
+      <button class="tb-btn" id="blog2">Tancar sessió</button>
     </div>
   </div>
-
-  <div class="main-layout">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <div class="scan-zone">
-          <div class="scan-row">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75V16.5zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"/></svg>
-            <span class="scan-txt">Escaneja el codi de la caixa</span>
-          </div>
-          <input id="scan-inp" class="scan-inp" placeholder="o escriu el codi i prem Enter..." autocomplete="off"/>
-          <div id="scan-msg" class="scan-msg"></div>
+  <div class="ml">
+    <div class="sb">
+      <div class="sbh">
+        <div class="scz">
+          <div class="scr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75V16.5zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"/></svg><span class="sct">Escaneja el codi de la caixa</span></div>
+          <input id="scscan" class="sci" placeholder="o escriu el codi i prem Enter..." autocomplete="off"/>
+          <div id="scmsg" class="scm"></div>
         </div>
-        <input id="cerca-inp" class="search-inp" placeholder="Cerca caixa, codi o servei..."/>
+        <input id="cerca" class="sri" placeholder="Cerca caixa, codi o servei..."/>
       </div>
-      <div class="sidebar-list" id="caixes-list"></div>
+      <div class="sbl" id="clist"></div>
     </div>
-
-    <!-- Content -->
-    <div class="content" id="content-area">
+    <div class="ct" id="ct">
       <!-- Empty -->
-      <div class="content-empty" id="empty-state">
+      <div class="ce" id="es">
         <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776"/></svg>
-        <div class="content-empty-title">Selecciona una caixa</div>
-        <div class="content-empty-sub">Escaneja el codi de barres o selecciona una caixa del llistat per iniciar el registre</div>
+        <div class="ce-t">Selecciona una caixa</div>
+        <div class="ce-s">Escaneja el codi de barres o selecciona del llistat per iniciar el registre</div>
       </div>
-
-      <!-- Registre -->
-      <div class="reg-panel" id="reg-panel" style="display:none">
-        <div class="reg-header">
-          <div class="reg-nom" id="reg-nom">—</div>
-          <div class="reg-sub" id="reg-sub">—</div>
-          <div class="reg-badges" id="reg-badges"></div>
-        </div>
-        <div class="reg-body">
-          <!-- Steps indicator -->
-          <div class="steps-wrap" id="steps-wrap">
-            <div class="step">
-              <div class="step-dot" id="step-dot-1">1</div>
-              <span class="step-lbl" id="step-lbl-1">Foto oberta</span>
-            </div>
-            <div class="step-line" id="step-line-1"></div>
-            <div class="step">
-              <div class="step-dot" id="step-dot-2">2</div>
-              <span class="step-lbl" id="step-lbl-2">Foto tancada</span>
-            </div>
-            <div class="step-line" id="step-line-2"></div>
-            <div class="step">
-              <div class="step-dot" id="step-dot-3">3</div>
-              <span class="step-lbl" id="step-lbl-3">Incidències</span>
-            </div>
-            <div class="step-line" id="step-line-3"></div>
-            <div class="step">
-              <div class="step-dot" id="step-dot-4">4</div>
-              <span class="step-lbl" id="step-lbl-4">Tancar</span>
-            </div>
+      <!-- Registre TCAE -->
+      <div class="rp" id="rp" style="display:none">
+        <div class="rph"><div class="rpn" id="rpn">—</div><div class="rps" id="rps">—</div><div class="rpb" id="rpb"></div></div>
+        <div class="rpbody">
+          <div class="stw">
+            <div class="st"><div class="std" id="sd1">1</div><span class="stl" id="sl1">Foto oberta</span></div>
+            <div class="stln" id="sln1"></div>
+            <div class="st"><div class="std" id="sd2">2</div><span class="stl" id="sl2">Foto tancada</span></div>
+            <div class="stln" id="sln2"></div>
+            <div class="st"><div class="std" id="sd3">3</div><span class="stl" id="sl3">Incidències</span></div>
+            <div class="stln" id="sln3"></div>
+            <div class="st"><div class="std" id="sd4">4</div><span class="stl" id="sl4">Tancar</span></div>
           </div>
-
-          <!-- Fotos -->
-          <div class="foto-section">
-            <div class="foto-card" id="fc-oberta" onclick="obrirCamera('oberta')">
-              <div class="foto-icon">📷</div>
-              <div class="foto-label">Foto caixa oberta</div>
-              <div class="foto-estat" id="fe-oberta">Toca per capturar</div>
-            </div>
-            <div class="foto-card" id="fc-tancada" onclick="obrirCamera('tancada')">
-              <div class="foto-icon">📷</div>
-              <div class="foto-label">Foto caixa tancada</div>
-              <div class="foto-estat" id="fe-tancada">Fes-la un cop tancada</div>
-            </div>
+          <div class="fts">
+            <div class="ftc" id="fco" onclick="obrirCamera('oberta')"><div class="fti">📷</div><div class="ftlb">Foto caixa oberta</div><div class="ftes" id="feo">Toca per capturar</div></div>
+            <div class="ftc" id="fct" onclick="obrirCamera('tancada')"><div class="fti">📷</div><div class="ftlb">Foto caixa tancada</div><div class="ftes" id="fet">Fes-la un cop tancada</div></div>
           </div>
-
-          <!-- Incidències -->
-          <div class="inc-section">
-            <div class="inc-section-title">
-              <span>Incidències <span id="inc-count-badge" style="display:none;background:var(--red2);color:var(--red);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:6px">0</span></span>
-              <button class="btn-add-inc" onclick="obrirModalInc()">+ Afegir incidència</button>
-            </div>
-            <div id="inc-list">
-              <div class="inc-empty">Cap incidència registrada — opcional</div>
-            </div>
+          <div class="ins">
+            <div class="inst"><span>Incidències <span id="incbdg" style="display:none;background:var(--red2);color:var(--red);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:6px">0</span></span><button class="bai" onclick="obrirModalInc()">+ Afegir</button></div>
+            <div id="inclist"><div class="ine">Cap incidència — opcional</div></div>
           </div>
         </div>
-
-        <div class="reg-footer">
-          <div class="footer-info" id="footer-info">Captura les dues fotos per poder tancar</div>
-          <button class="btn-tancar" id="btn-tancar" disabled onclick="finalitzar()">Tancar i guardar registre</button>
+        <div class="rpf"><div class="rfi" id="rfi">Captura les dues fotos per poder tancar</div><button class="btanc" id="btanc" disabled onclick="finalitzar()">Tancar i guardar registre</button></div>
+      </div>
+      <!-- Panell supervisor/infermeria -->
+      <div class="sup-panel" id="spp" style="display:none">
+        <div class="sup-header">
+          <div class="sup-title" id="sptit">Registres del torn</div>
+          <div class="sup-filters">
+            <select class="sup-sel" id="spdata" onchange="renderSupPanel()">
+              <option value="avui">Avui</option>
+              <option value="ahir">Ahir</option>
+              <option value="setmana">Aquesta setmana</option>
+              <option value="tot">Tot</option>
+            </select>
+            <select class="sup-sel" id="sptorn" onchange="renderSupPanel()">
+              <option value="tot">Tots els torns</option>
+              <option value="dia">Torn dia (08–20h)</option>
+              <option value="nit">Torn nit (20–08h)</option>
+            </select>
+            <button class="btn-pdf" onclick="generarPDF()">📄 Generar PDF</button>
+          </div>
+        </div>
+        <div class="sup-body">
+          <div class="sup-stats" id="spstats"></div>
+          <div class="sup-table" id="sptaula"></div>
         </div>
       </div>
-
       <!-- Resultat -->
-      <div id="resultat-panel" style="display:none;flex-direction:column;height:100%">
-        <div class="reg-header" style="flex-shrink:0">
-          <div style="display:flex;align-items:center;gap:10px">
-            <button class="btn-ghost" onclick="tornarACaixes()">← Tornar a caixes</button>
-            <span style="font-size:15px;font-weight:700;color:var(--navy)">Registre completat</span>
-          </div>
-        </div>
-        <div class="resultat-wrap" id="resultat-body"></div>
+      <div id="respan" style="display:none;flex-direction:column;height:100%">
+        <div class="rph" style="flex-shrink:0"><div style="display:flex;align-items:center;gap:10px"><button class="bgh" onclick="tornarACaixes()">← Tornar</button><span style="font-size:15px;font-weight:700">Registre completat</span></div></div>
+        <div class="resw" id="resbody"></div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Historial -->
-<div id="historial-panel">
-  <div class="hist-panel-hdr">
-    <span class="hist-panel-tit">Historial de registres</span>
-    <button class="btn-ghost" id="btn-hist-close">✕</button>
-  </div>
-  <div class="hist-panel-body" id="historial-body"></div>
-</div>
+<div id="hp"><div class="hph"><span class="hpt">Historial</span><button class="bgh" id="bhclose">✕</button></div><div class="hpb" id="hpbody"></div></div>
 
 <!-- Modal incidència -->
-<div class="overlay" id="modal-overlay" onclick="tancarModal(event)">
-  <div class="modal-card">
-    <div class="modal-title">Afegir incidència</div>
-    <div class="modal-field">
-      <label class="modal-lbl">Tipus d'incidència</label>
-      <div class="motiu-grid" id="motius-list"></div>
-    </div>
-    <div class="modal-field">
-      <label class="modal-lbl">Descripció (opcional)</label>
-      <textarea id="inc-desc" class="inc-desc-inp" rows="3" placeholder="Descriu la incidència: instrument afectat, estat, acció presa..."></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="btn-gray" onclick="tancarModal()">Cancel·lar</button>
-      <button class="btn-primary" style="flex:1;padding:10px" onclick="guardarInc()">Afegir incidència</button>
-    </div>
+<div class="ov" id="mov" onclick="tancarModal(event)">
+  <div class="mc">
+    <div class="mt">Afegir incidència</div>
+    <div class="mfl"><label class="mbl">Tipus</label><div class="mg" id="mlist"></div></div>
+    <div class="mfl"><label class="mbl">Descripció (opcional)</label><textarea id="mdesc" class="mta" rows="3" placeholder="Instrument afectat, estat, acció presa..."></textarea></div>
+    <div class="mbs"><button class="bgr" onclick="tancarModal()">Cancel·lar</button><button class="bp" style="flex:1;padding:10px" onclick="guardarInc()">Afegir</button></div>
   </div>
 </div>
 
 <!-- Càmera -->
-<div class="camera-overlay" id="camera-overlay">
-  <div class="camera-title" id="camera-title">Captura fotogràfica</div>
-  <div class="camera-sub" id="camera-sub">Assegura't que la caixa és visible</div>
-  <div class="camera-wrap">
-    <video id="camera-video" autoplay playsinline></video>
-    <canvas id="camera-canvas"></canvas>
-  </div>
-  <img id="camera-preview" class="camera-preview" alt="Previsualització"/>
-  <div class="camera-btns">
-    <button class="btn-cancelar-cam" onclick="tancarCamera()">Cancel·lar</button>
-    <button class="btn-capture" id="btn-camera-capture" onclick="capturarFoto()">📷 Capturar</button>
-    <button class="btn-repetir" id="btn-camera-repetir" onclick="repetirFoto()">↺ Repetir</button>
-    <button class="btn-acceptar" id="btn-camera-acceptar" onclick="acceptarFoto()">✓ Acceptar</button>
+<div class="camo" id="camo">
+  <div class="cat" id="catit">Captura fotogràfica</div>
+  <div class="cas" id="casub">Assegura't que la caixa és visible</div>
+  <div class="caw"><video id="cvid" autoplay playsinline></video><canvas id="ccan"></canvas></div>
+  <img id="cprev" class="cprev" alt=""/>
+  <div class="camb">
+    <button class="bcan" onclick="tancarCamera()">Cancel·lar</button>
+    <button class="bcap" id="bcap" onclick="capturarFoto()">📷 Capturar</button>
+    <button class="brep" id="brep" onclick="repetirFoto()">↺ Repetir</button>
+    <button class="bacc" id="bacc" onclick="acceptarFoto()">✓ Acceptar</button>
   </div>
 </div>
+
+<!-- PDF hidden content -->
+<div id="pdf-content"></div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════
@@ -466,53 +441,68 @@ const SUPABASE_URL  = 'https://cnfkwmswlnmhtflfumdn.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuZmt3bXN3bG5taHRmbGZ1bWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTkzNDYsImV4cCI6MjA5NjczNTM0Nn0.cJFq5vqV4at5_MDpJWfV5fDxchm9vfgNc1bSkCcduiw';
 // ══════════════════════════════════════════════════════════════════════════
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+const MOTIUS=["Instrumental faltant","Instrumental trencat","Instrumental deteriorat","Retingut a quiròfan","En reparació","Contaminat","Material extern pendent","Altre"];
 
-const MOTIUS = ["Instrumental faltant","Instrumental trencat","Instrumental deteriorat","Retingut a quiròfan","En reparació","Contaminat","Material extern pendent","Altre"];
+// Rols: TCAE | Infermeria | Supervisora | Admin
+// TCAE      → fa registres, veu els seus del torn actual
+// Infermeria→ fa registres, veu tots del torn actual
+// Supervisora/Admin → tot + PDF
 
-let G = {
-  user:null, perfil:null, caixes:[],
-  caixaActiva:null,
-  fotoOberta:false, fotoOberteData:null,
-  fotoTancada:false, fotoTancadaData:null,
-  incidencies:[],   // [{tipus, desc, ts}]
-  registres:[],
-  motiuSel: MOTIUS[0]
-};
+let G={user:null,perfil:null,caixes:[],caixaActiva:null,fotoOberta:false,fotoOberteData:null,fotoTancada:false,fotoTancadaData:null,incidencies:[],registres:[],motiuSel:MOTIUS[0]};
 
-// ── UTILS ─────────────────────────────────────────────────────────────────
 const $=id=>document.getElementById(id);
 function now(){return new Date().toLocaleString("ca-ES",{dateStyle:"short",timeStyle:"short"});}
-function loading(show,txt="Carregant..."){$("loading-overlay").classList.toggle("hide",!show);$("loading-txt").textContent=txt;}
-function showMsg(id,txt,t){const el=$(id);el.className=t==="err"?"err-box":"ok-box";el.textContent=txt;el.style.display="block";}
+function loading(s,t="Carregant..."){$("lo").classList.toggle("hide",!s);$("lo-txt").textContent=t;}
+function showMsg(id,t,tp){const e=$(id);e.className=tp==="err"?"ebox":"obox";e.textContent=t;e.style.display="block";}
 function hideMsg(id){$(id).style.display="none";}
-function setBtn(id,dis,txt){const b=$(id);b.disabled=dis;b.innerHTML=dis?`<span class="spinner"></span>${txt}...`:txt;}
-function validarPwd(p){
-  if(p.length<10)return"Mínim 10 caràcters";
-  if(p.length>20)return"Màxim 20 caràcters";
-  if(!/[A-Z]/.test(p))return"Mínim una majúscula";
-  if(!/[a-z]/.test(p))return"Mínim una minúscula";
-  if(!/[0-9]/.test(p))return"Mínim un número";
-  return null;
-}
-function estatColor(e){return e==="completa"?"#16a34a":e==="incompleta"?"#d97706":e==="bloquejada"?"#dc2626":"#64748b";}
-function showContent(w){
-  $("empty-state").style.display="none";
-  $("reg-panel").style.display="none";
-  $("resultat-panel").style.display="none";
-  if(w==="empty")$("empty-state").style.display="flex";
-  else if(w==="reg")$("reg-panel").style.display="flex";
-  else if(w==="resultat"){$("resultat-panel").style.display="flex";$("resultat-panel").style.flexDirection="column";}
+function setBtn(id,d,t){const b=$(id);b.disabled=d;b.innerHTML=d?`<span class="spin"></span>${t}...`:t;}
+function validarPwd(p){if(p.length<10)return"Mínim 10 caràcters";if(p.length>20)return"Màxim 20 caràcters";if(!/[A-Z]/.test(p))return"Mínim una majúscula";if(!/[a-z]/.test(p))return"Mínim una minúscula";if(!/[0-9]/.test(p))return"Mínim un número";return null;}
+function estatColor(e){return e==="completa"?"#16a34a":e==="incompleta"?"#d97706":"#64748b";}
+
+// Torn actual: dia=08-20h, nit=20-08h
+function tornActual(){const h=new Date().getHours();return h>=8&&h<20?"dia":"nit";}
+function tornDeData(d){const h=new Date(d).getHours();return h>=8&&h<20?"dia":"nit";}
+function esDinsFiltre(reg){
+  const filData=$("spdata")?.value||"avui";
+  const filTorn=$("sptorn")?.value||"tot";
+  const ara=new Date();
+  const dReg=new Date(reg.created_at||reg.data);
+  let ok=true;
+  if(filData==="avui"){const av=new Date();av.setHours(0,0,0,0);ok=dReg>=av;}
+  else if(filData==="ahir"){const av=new Date();av.setDate(av.getDate()-1);av.setHours(0,0,0,0);const fi=new Date(av);fi.setHours(23,59,59,999);ok=dReg>=av&&dReg<=fi;}
+  else if(filData==="setmana"){const dil=new Date();dil.setDate(dil.getDate()-dil.getDay()+1);dil.setHours(0,0,0,0);ok=dReg>=dil;}
+  if(ok&&filTorn!=="tot"){ok=tornDeData(reg.created_at||reg.data)===filTorn;}
+  return ok;
 }
 
-// ── AUDIT ─────────────────────────────────────────────────────────────────
-async function audit(accio,detall={}){
+function rolLabel(r){
+  if(r==="Supervisora"||r==="Admin")return`<span class="tb-rol rol-sup">${r}</span>`;
+  if(r==="Infermeria")return`<span class="tb-rol rol-inf">${r}</span>`;
+  return`<span class="tb-rol rol-tcae">${r||"TCAE"}</span>`;
+}
+function esSupOInf(){return["Supervisora","Admin","Infermeria"].includes(G.perfil?.rol);}
+function esSup(){return["Supervisora","Admin"].includes(G.perfil?.rol);}
+
+function showContent(w){
+  $("es").style.display="none";
+  $("rp").style.display="none";
+  $("spp").style.display="none";
+  $("respan").style.display="none";
+  if(w==="empty")$("es").style.display="flex";
+  else if(w==="reg")$("rp").style.display="flex";
+  else if(w==="sup"){$("spp").style.display="flex";renderSupPanel();}
+  else if(w==="res"){$("respan").style.display="flex";$("respan").style.flexDirection="column";}
+}
+
+// ── AUDIT ──────────────────────────────────────────────────────────────
+async function audit(a,d={}){
   if(!G.user)return;
-  try{ await sb.from("audit_log").insert({usuari_id:G.user.id,usuari_nom:G.perfil?.nom_complet||G.user.email,accio,detall,created_at:new Date().toISOString()}); }
+  try{await sb.from("audit_log").insert({usuari_id:G.user.id,usuari_nom:G.perfil?.nom_complet||G.user.email,accio:a,detall:d,created_at:new Date().toISOString()});}
   catch(e){console.warn("Audit:",e);}
 }
 
-// ── AUTH ──────────────────────────────────────────────────────────────────
+// ── AUTH ───────────────────────────────────────────────────────────────
 async function init(){
   loading(true);
   const{data:{session}}=await sb.auth.getSession();
@@ -520,381 +510,413 @@ async function init(){
   loading(false);
 }
 init();
+sb.auth.onAuthStateChange(async(ev)=>{if(ev==="PASSWORD_RECOVERY"){$("lf").style.display="none";$("cf").style.display="block";$("sl").classList.remove("hide");$("app").classList.remove("show");}});
 
-sb.auth.onAuthStateChange(async(event)=>{
-  if(event==="PASSWORD_RECOVERY"){$("login-form").style.display="none";$("cambio-form").style.display="block";$("s-login").classList.remove("hide");$("app").classList.remove("show");}
-});
-
-async function carregarPerfil(){
-  const{data}=await sb.from("profiles").select("*").eq("id",G.user.id).single();
-  G.perfil=data;
-}
+async function carregarPerfil(){const{data}=await sb.from("profiles").select("*").eq("id",G.user.id).single();G.perfil=data;}
 async function carregarCaixes(){
   loading(true,"Carregant caixes...");
-  const{data:caixes}=await sb.from("caixes_amb_servei").select("*");
-  if(!caixes){loading(false);return;}
-  G.caixes=caixes.map(c=>({...c,servei:c.servei_nom||"—"}));
+  const{data:c}=await sb.from("caixes_amb_servei").select("*");
+  if(!c){loading(false);return;}
+  G.caixes=c.map(x=>({...x,servei:x.servei_nom||"—"}));
   loading(false);
 }
+
 function mostrarApp(){
-  $("s-login").classList.add("hide");$("app").classList.add("show");
+  $("sl").classList.add("hide");$("app").classList.add("show");
   const nom=G.perfil?.nom_complet||G.user?.email||"—";
-  $("topbar-user").textContent=nom.split(",")[0].split("@")[0];
-  renderCaixes(""); showContent("empty");
+  const rol=G.perfil?.rol||"TCAE";
+  $("tbu").innerHTML=nom.split(",")[0].split("@")[0]+rolLabel(rol);
+  renderCaixes("");
+  // Supervisora/Infermeria veu el panell directament
+  if(esSupOInf()){
+    $("sptit").textContent=esSup()?"Tots els registres — Supervisora":"Registres del torn — Infermeria";
+    showContent("sup");
+  } else {
+    showContent("empty");
+  }
 }
 
 // LOGIN
-$("btn-show").onclick=()=>{const i=$("inp-pass");i.type=i.type==="password"?"text":"password";$("btn-show").textContent=i.type==="password"?"Veure":"Oculta";};
-$("btn-show2").onclick=()=>{const i=$("inp-new1");i.type=i.type==="password"?"text":"password";$("btn-show2").textContent=i.type==="password"?"Veure":"Oculta";};
-$("inp-pass").onkeydown=e=>{if(e.key==="Enter")login();};
-$("inp-email").onkeydown=e=>{if(e.key==="Enter")$("inp-pass").focus();};
-$("btn-login").onclick=login;
-$("btn-forgot").onclick=recuperarPwd;
-$("btn-cambio").onclick=canviPwd;
-$("btn-logout").onclick=logout;
+$("bshow").onclick=()=>{const i=$("ip");i.type=i.type==="password"?"text":"password";$("bshow").textContent=i.type==="password"?"Veure":"Oculta";};
+$("bshow2").onclick=()=>{const i=$("in1");i.type=i.type==="password"?"text":"password";$("bshow2").textContent=i.type==="password"?"Veure":"Oculta";};
+$("ip").onkeydown=e=>{if(e.key==="Enter")login();};
+$("ie").onkeydown=e=>{if(e.key==="Enter")$("ip").focus();};
+$("blog").onclick=login;
+$("bfgt").onclick=recuperarPwd;
+$("bcam").onclick=canviPwd;
+$("blog2").onclick=logout;
 
 async function login(){
-  const email=$("inp-email").value.trim(),pass=$("inp-pass").value;
-  hideMsg("login-msg");
-  if(!email){showMsg("login-msg","Introdueix el correu electrònic","err");return;}
-  const ep=validarPwd(pass);if(ep){showMsg("login-msg",ep,"err");return;}
-  setBtn("btn-login",true,"Entrant");
+  const email=$("ie").value.trim(),pass=$("ip").value;
+  hideMsg("lmsg");
+  if(!email){showMsg("lmsg","Introdueix el correu electrònic","err");return;}
+  const ep=validarPwd(pass);if(ep){showMsg("lmsg",ep,"err");return;}
+  setBtn("blog",true,"Entrant");
   const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
-  setBtn("btn-login",false,"Entrar al sistema");
-  if(error){showMsg("login-msg","Correu o contrasenya incorrectes","err");return;}
+  setBtn("blog",false,"Entrar al sistema");
+  if(error){showMsg("lmsg","Correu o contrasenya incorrectes","err");return;}
   G.user=data.user;await carregarPerfil();
-  audit("LOGIN",{email:G.user.email});
-  if(G.perfil?.pwd_caducada){$("login-form").style.display="none";$("cambio-form").style.display="block";return;}
+  audit("LOGIN",{email:G.user.email,rol:G.perfil?.rol});
+  if(G.perfil?.pwd_caducada){$("lf").style.display="none";$("cf").style.display="block";return;}
   await carregarCaixes();mostrarApp();
 }
 async function recuperarPwd(){
-  const email=$("inp-email").value.trim();
-  if(!email){showMsg("login-msg","Introdueix el teu correu","err");return;}
+  const email=$("ie").value.trim();
+  if(!email){showMsg("lmsg","Introdueix el teu correu","err");return;}
   const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.href});
-  if(error){showMsg("login-msg","Error en enviar el correu","err");return;}
-  showMsg("login-msg","✓ Comprova el teu correu per restablir la contrasenya","ok");
+  if(error){showMsg("lmsg","Error en enviar","err");return;}
+  showMsg("lmsg","✓ Comprova el teu correu","ok");
 }
 async function canviPwd(){
-  const p1=$("inp-new1").value,p2=$("inp-new2").value;
-  hideMsg("cambio-msg");
-  const e=validarPwd(p1);if(e){showMsg("cambio-msg",e,"err");return;}
-  if(p1!==p2){showMsg("cambio-msg","Les contrasenyes no coincideixen","err");return;}
-  setBtn("btn-cambio",true,"Actualitzant");
+  const p1=$("in1").value,p2=$("in2").value;hideMsg("cmsg");
+  const e=validarPwd(p1);if(e){showMsg("cmsg",e,"err");return;}
+  if(p1!==p2){showMsg("cmsg","Les contrasenyes no coincideixen","err");return;}
+  setBtn("bcam",true,"Actualitzant");
   const{error}=await sb.auth.updateUser({password:p1});
-  setBtn("btn-cambio",false,"Actualitzar contrasenya");
-  if(error){showMsg("cambio-msg","Error en actualitzar","err");return;}
+  setBtn("bcam",false,"Actualitzar contrasenya");
+  if(error){showMsg("cmsg","Error","err");return;}
   if(G.user)await sb.from("profiles").update({pwd_caducada:false,pwd_canviat_at:new Date().toISOString()}).eq("id",G.user.id);
-  showMsg("cambio-msg","✓ Contrasenya actualitzada!","ok");
+  showMsg("cmsg","✓ Contrasenya actualitzada!","ok");
   setTimeout(async()=>{await carregarCaixes();mostrarApp();},1200);
 }
 async function logout(){
   await audit("LOGOUT",{});await sb.auth.signOut();
   G={user:null,perfil:null,caixes:[],caixaActiva:null,fotoOberta:false,fotoOberteData:null,fotoTancada:false,fotoTancadaData:null,incidencies:[],registres:[],motiuSel:MOTIUS[0]};
-  $("inp-email").value="";$("inp-pass").value="";hideMsg("login-msg");
-  $("login-form").style.display="block";$("cambio-form").style.display="none";
-  $("s-login").classList.remove("hide");$("app").classList.remove("show");
+  $("ie").value="";$("ip").value="";hideMsg("lmsg");
+  $("lf").style.display="block";$("cf").style.display="none";
+  $("sl").classList.remove("hide");$("app").classList.remove("show");
 }
 
-// ── CAIXES ────────────────────────────────────────────────────────────────
-$("cerca-inp").oninput=e=>renderCaixes(e.target.value);
-$("scan-inp").onkeydown=e=>{if(e.key==="Enter")processarScan($("scan-inp").value.trim());};
-$("btn-hist-toggle").onclick=()=>{const p=$("historial-panel");p.classList.toggle("show");if(p.classList.contains("show"))renderHistorial();};
-$("btn-hist-close").onclick=()=>$("historial-panel").classList.remove("show");
+// ── CAIXES ─────────────────────────────────────────────────────────────
+$("cerca").oninput=e=>renderCaixes(e.target.value);
+$("scscan").onkeydown=e=>{if(e.key==="Enter")processarScan($("scscan").value.trim());};
+$("bhist").onclick=()=>{const p=$("hp");p.classList.toggle("show");if(p.classList.contains("show"))renderHistorial();};
+$("bhclose").onclick=()=>$("hp").classList.remove("show");
 
 function processarScan(codi){
   if(!codi)return;
   const c=G.caixes.find(x=>x.id===codi||x.ref_externa===codi);
-  const msg=$("scan-msg");
-  if(c){msg.textContent=`✓ ${c.nom}`;msg.className="scan-msg ok";msg.style.display="block";setTimeout(()=>{msg.style.display="none";$("scan-inp").value="";abrirCaixa(c);},700);}
-  else{msg.textContent=`Codi no reconegut: ${codi}`;msg.className="scan-msg err";msg.style.display="block";setTimeout(()=>{msg.style.display="none";$("scan-inp").value="";},2000);}
+  const m=$("scmsg");
+  if(c){m.textContent=`✓ ${c.nom}`;m.className="scm ok";m.style.display="block";setTimeout(()=>{m.style.display="none";$("scscan").value="";abrirCaixa(c);},700);}
+  else{m.textContent=`Codi no reconegut: ${codi}`;m.className="scm err";m.style.display="block";setTimeout(()=>{m.style.display="none";$("scscan").value="";},2000);}
 }
 
-function renderCaixes(filtre){
-  const f=filtre.toLowerCase();
-  const filtrades=G.caixes.filter(c=>c.nom.toLowerCase().includes(f)||c.servei.toLowerCase().includes(f)||c.id.toLowerCase().includes(f));
-  if(filtrades.length===0){$("caixes-list").innerHTML=`<div style="text-align:center;color:var(--muted);font-size:13px;margin-top:40px">Cap caixa trobada</div>`;return;}
-  const serveis={};
-  filtrades.forEach(c=>{const s=c.servei||"Sense servei";if(!serveis[s])serveis[s]=[];serveis[s].push(c);});
-  let html="";
-  Object.entries(serveis).forEach(([s,cs])=>{
-    html+=`<div class="sec-lbl">${s}</div>`;
+function renderCaixes(f){
+  f=f.toLowerCase();
+  const fl=G.caixes.filter(c=>c.nom.toLowerCase().includes(f)||c.servei.toLowerCase().includes(f)||c.id.toLowerCase().includes(f));
+  if(!fl.length){$("clist").innerHTML=`<div style="text-align:center;color:var(--muted);font-size:13px;margin-top:40px">Cap caixa trobada</div>`;return;}
+  const sv={};fl.forEach(c=>{const s=c.servei||"—";if(!sv[s])sv[s]=[];sv[s].push(c);});
+  let h="";
+  Object.entries(sv).forEach(([s,cs])=>{
+    h+=`<div class="slbl">${s}</div>`;
     cs.forEach(c=>{
-      const isActive=G.caixaActiva?.id===c.id;
-      html+=`<button class="caixa-item${isActive?" active":""}" onclick="abrirCaixaPerId('${c.id}')">
-        <div class="ci-top"><span class="ci-nom">${c.nom}</span>
-          <div class="ci-badges">${c.critica?'<span class="crit-bdg">CRÍTICA</span>':""}${c.tipus==="extern"?'<span class="ext-bdg">EXTERN</span>':""}</div>
-        </div>
-        <div class="ci-meta"><span style="font-family:monospace">${c.id}</span><span class="dot">·</span>${c.empresa?`<span style="color:var(--purple);font-size:10px">${c.empresa}</span>`:c.servei}</div>
+      const act=G.caixaActiva?.id===c.id;
+      h+=`<button class="ci${act?" active":""}" onclick="abrirCaixaPerId('${c.id}')">
+        <div class="cit"><span class="cin">${c.nom}</span><div class="cib">${c.critica?'<span class="cbcr">CRÍTICA</span>':""}${c.tipus==="extern"?'<span class="cbex">EXTERN</span>':""}</div></div>
+        <div class="cim"><span style="font-family:monospace">${c.id}</span><span class="dot">·</span>${c.empresa?`<span style="color:var(--purple);font-size:10px">${c.empresa}</span>`:c.servei}</div>
       </button>`;
     });
   });
-  $("caixes-list").innerHTML=html;
+  $("clist").innerHTML=h;
 }
 function abrirCaixaPerId(id){const c=G.caixes.find(x=>x.id===id);if(c)abrirCaixa(c);}
 
-// ── OBRIR CAIXA ────────────────────────────────────────────────────────────
+// ── OBRIR CAIXA ────────────────────────────────────────────────────────
 function abrirCaixa(c){
-  G.caixaActiva=c;
-  G.fotoOberta=false; G.fotoOberteData=null;
-  G.fotoTancada=false; G.fotoTancadaData=null;
-  G.incidencies=[];
-  renderCaixes($("cerca-inp").value);
-  // Capçalera
-  $("reg-nom").textContent=c.nom;
-  $("reg-sub").textContent=`${c.id} · ${c.servei}${c.destino?" · "+c.destino:""}`;
-  $("reg-badges").innerHTML=(c.critica?'<span class="crit-bdg" style="font-size:10px;padding:3px 8px">CRÍTICA</span>':"")+(c.tipus==="extern"?'<span class="ext-bdg" style="font-size:10px;padding:3px 8px">EXTERN</span>':"");
-  // Reset fotos
-  $("fc-oberta").classList.remove("done","pendent-obligat");
-  $("fc-tancada").classList.remove("done","pendent-obligat");
-  $("fe-oberta").textContent="Toca per capturar";
-  $("fe-tancada").textContent="Fes-la un cop tancada";
-  // Reset incidències
-  renderIncidencies();
-  // Steps i footer
-  actualitzarSteps();
+  G.caixaActiva=c;G.fotoOberta=false;G.fotoOberteData=null;G.fotoTancada=false;G.fotoTancadaData=null;G.incidencies=[];
+  renderCaixes($("cerca").value);
+  $("rpn").textContent=c.nom;
+  $("rps").textContent=`${c.id} · ${c.servei}${c.destino?" · "+c.destino:""}`;
+  $("rpb").innerHTML=(c.critica?'<span class="cbcr" style="font-size:10px;padding:3px 8px">CRÍTICA</span>':"")+(c.tipus==="extern"?'<span class="cbex" style="font-size:10px;padding:3px 8px">EXTERN</span>':"");
+  $("fco").classList.remove("done");$("fct").classList.remove("done");
+  $("feo").textContent="Toca per capturar";$("fet").textContent="Fes-la un cop tancada";
+  renderIncs();actualitzarSteps();
   showContent("reg");
-  audit("OBRIR_CAIXA",{caixa_id:c.id,caixa_nom:c.nom,servei:c.servei,tipus:c.tipus});
+  audit("OBRIR_CAIXA",{caixa_id:c.id,caixa_nom:c.nom,servei:c.servei});
 }
 
-// ── STEPS ─────────────────────────────────────────────────────────────────
+// ── STEPS ──────────────────────────────────────────────────────────────
 function actualitzarSteps(){
-  const s1=G.fotoOberta, s2=G.fotoTancada, potTancar=s1&&s2;
-  // Dots
-  [1,2,3,4].forEach(n=>{
-    const dot=$(`step-dot-${n}`), lbl=$(`step-lbl-${n}`);
-    dot.className="step-dot"; lbl.className="step-lbl";
-    if((n===1&&s1)||(n===2&&s2)||(n===3&&potTancar)||(n===4&&false)){dot.classList.add("done");lbl.classList.add("done");dot.textContent="✓";}
-    else if((n===1&&!s1)||((n===2)&&s1&&!s2)||((n===3)&&s2)||((n===4)&&potTancar)){dot.classList.add("active");lbl.classList.add("active");dot.textContent=n;}
-    else dot.textContent=n;
+  const s1=G.fotoOberta,s2=G.fotoTancada,ok=s1&&s2;
+  const cfg=[[1,s1,s1],[2,s2,s1&&!s2||s2],[3,ok,ok],[4,false,ok]];
+  cfg.forEach(([n,done,act])=>{
+    const d=$(`sd${n}`),l=$(`sl${n}`);
+    d.className="std";l.className="stl";
+    if(done){d.classList.add("done");l.classList.add("done");d.textContent="✓";}
+    else if(act&&!done){d.classList.add("act");l.classList.add("act");d.textContent=n;}
+    else d.textContent=n;
   });
-  // Lines
-  $("step-line-1").className="step-line"+(s1?" done":"");
-  $("step-line-2").className="step-line"+(s2?" done":"");
-  $("step-line-3").className="step-line"+(potTancar?" done":"");
-  // Footer
-  const btn=$("btn-tancar");
-  if(potTancar){
+  $("sln1").className="stln"+(s1?" done":"");
+  $("sln2").className="stln"+(s2?" done":"");
+  $("sln3").className="stln"+(ok?" done":"");
+  const btn=$("btanc"),ni=G.incidencies.length;
+  if(ok){
     btn.disabled=false;
-    const nInc=G.incidencies.length;
-    btn.style.background=nInc>0?"#92400e":"#15803d";
-    btn.textContent=nInc>0?`⚠ Tancar amb ${nInc} incidència${nInc>1?"s":""}  — Guardar`:"✓ Tancar i guardar registre";
-    $("footer-info").innerHTML=`<strong>${G.caixaActiva?.nom}</strong> · ${nInc} incidències`;
+    btn.style.background=ni>0?"#92400e":"#15803d";
+    btn.textContent=ni>0?`⚠ Tancar amb ${ni} incidència${ni>1?"s":""}  — Guardar`:"✓ Tancar i guardar registre";
+    $("rfi").innerHTML=`<strong>${G.caixaActiva?.nom}</strong> · ${ni} incidències`;
   } else {
-    btn.disabled=true; btn.textContent="Tancar i guardar registre";
-    const manca=[];
-    if(!s1)manca.push("foto caixa oberta");
-    if(!s2)manca.push("foto caixa tancada");
-    $("footer-info").textContent=`Pendent: ${manca.join(" i ")}`;
+    btn.disabled=true;btn.textContent="Tancar i guardar registre";
+    const m=[];if(!s1)m.push("foto oberta");if(!s2)m.push("foto tancada");
+    $("rfi").textContent=`Pendent: ${m.join(" i ")}`;
   }
 }
 
-// ── CÀMERA ────────────────────────────────────────────────────────────────
-let cameraStream=null, cameraFotoTipus=null, cameraFotoData=null;
-
-async function obrirCamera(tipus){
-  cameraFotoTipus=tipus; cameraFotoData=null;
-  $("camera-title").textContent=tipus==="oberta"?"📷 Foto caixa OBERTA":"📷 Foto caixa TANCADA";
-  $("camera-sub").textContent=tipus==="oberta"?"Captura la caixa amb el contingut visible abans de tancar":"Captura la caixa un cop tancada i precintada";
-  $("camera-video").style.display="block";
-  $("camera-preview").style.display="none";
-  $("btn-camera-capture").style.display="inline-flex";
-  $("btn-camera-repetir").style.display="none";
-  $("btn-camera-acceptar").style.display="none";
-  $("camera-overlay").classList.add("open");
-  try{
-    cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});
-    $("camera-video").srcObject=cameraStream;
-  }catch(e){
-    console.warn("Càmera no disponible:",e);
-    tancarCamera();
-    marcarFotoFeta(tipus,null); // fallback sense imatge
-  }
+// ── CÀMERA ─────────────────────────────────────────────────────────────
+let cStream=null,cTipus=null,cData=null;
+async function obrirCamera(t){
+  cTipus=t;cData=null;
+  $("catit").textContent=t==="oberta"?"📷 Foto caixa OBERTA":"📷 Foto caixa TANCADA";
+  $("casub").textContent=t==="oberta"?"Captura la caixa amb el contingut visible":"Captura la caixa un cop tancada i precintada";
+  $("cvid").style.display="block";$("cprev").style.display="none";
+  $("bcap").style.display="inline-flex";$("brep").style.display="none";$("bacc").style.display="none";
+  $("camo").classList.add("open");
+  try{cStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});$("cvid").srcObject=cStream;}
+  catch(e){console.warn("Cam:",e);tancarCamera();marcarFoto(t,null);}
 }
-
 function capturarFoto(){
-  const v=$("camera-video"),c=$("camera-canvas");
-  c.width=v.videoWidth||1280; c.height=v.videoHeight||720;
+  const v=$("cvid"),c=$("ccan");c.width=v.videoWidth||1280;c.height=v.videoHeight||720;
   c.getContext("2d").drawImage(v,0,0,c.width,c.height);
-  cameraFotoData=c.toDataURL("image/jpeg",0.85);
-  $("camera-preview").src=cameraFotoData;
-  $("camera-preview").style.display="block";
-  $("camera-video").style.display="none";
-  $("btn-camera-capture").style.display="none";
-  $("btn-camera-repetir").style.display="inline-flex";
-  $("btn-camera-acceptar").style.display="inline-flex";
+  cData=c.toDataURL("image/jpeg",0.82);
+  $("cprev").src=cData;$("cprev").style.display="block";$("cvid").style.display="none";
+  $("bcap").style.display="none";$("brep").style.display="inline-flex";$("bacc").style.display="inline-flex";
 }
-
-function repetirFoto(){
-  cameraFotoData=null;
-  $("camera-video").style.display="block";
-  $("camera-preview").style.display="none";
-  $("btn-camera-capture").style.display="inline-flex";
-  $("btn-camera-repetir").style.display="none";
-  $("btn-camera-acceptar").style.display="none";
-}
-
-function acceptarFoto(){ marcarFotoFeta(cameraFotoTipus,cameraFotoData); tancarCamera(); }
-
-function marcarFotoFeta(tipus,dataUrl){
+function repetirFoto(){cData=null;$("cvid").style.display="block";$("cprev").style.display="none";$("bcap").style.display="inline-flex";$("brep").style.display="none";$("bacc").style.display="none";}
+function acceptarFoto(){marcarFoto(cTipus,cData);tancarCamera();}
+function marcarFoto(t,d){
   const ts=now();
-  if(tipus==="oberta"){
-    G.fotoOberta=true; G.fotoOberteData=dataUrl;
-    $("fc-oberta").classList.add("done");
-    $("fe-oberta").textContent=`✓ Capturada · ${ts}`;
-    audit("FOTO",{tipus:"oberta",caixa_id:G.caixaActiva?.id,amb_imatge:!!dataUrl});
-  } else {
-    G.fotoTancada=true; G.fotoTancadaData=dataUrl;
-    $("fc-tancada").classList.add("done");
-    $("fe-tancada").textContent=`✓ Capturada · ${ts}`;
-    audit("FOTO",{tipus:"tancada",caixa_id:G.caixaActiva?.id,amb_imatge:!!dataUrl});
-  }
+  if(t==="oberta"){G.fotoOberta=true;G.fotoOberteData=d;$("fco").classList.add("done");$("feo").textContent=`✓ Capturada · ${ts}`;audit("FOTO",{tipus:"oberta",caixa_id:G.caixaActiva?.id,amb_img:!!d});}
+  else{G.fotoTancada=true;G.fotoTancadaData=d;$("fct").classList.add("done");$("fet").textContent=`✓ Capturada · ${ts}`;audit("FOTO",{tipus:"tancada",caixa_id:G.caixaActiva?.id,amb_img:!!d});}
   actualitzarSteps();
 }
+function tancarCamera(){if(cStream){cStream.getTracks().forEach(t=>t.stop());cStream=null;}$("camo").classList.remove("open");}
 
-function tancarCamera(){
-  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}
-  $("camera-overlay").classList.remove("open");
-}
-
-// ── INCIDÈNCIES ────────────────────────────────────────────────────────────
+// ── INCIDÈNCIES ────────────────────────────────────────────────────────
 function obrirModalInc(){
-  let html="";
-  MOTIUS.forEach((m,i)=>{html+=`<button class="motiu-btn${i===0?" sel":""}" onclick="selMotiu(this,'${m.replace(/'/g,"\\'")}')">${m}</button>`;});
-  $("motius-list").innerHTML=html;
-  $("inc-desc").value="";
-  $("modal-overlay").classList.add("open");
-  audit("OBRIR_MODAL_INC",{caixa_id:G.caixaActiva?.id});
+  let h="";MOTIUS.forEach((m,i)=>{h+=`<button class="mb${i===0?" sel":""}" onclick="selMotiu(this,'${m.replace(/'/g,"\\'")}')">${m}</button>`;});
+  $("mlist").innerHTML=h;$("mdesc").value="";$("mov").classList.add("open");
 }
-
-function selMotiu(btn,m){
-  document.querySelectorAll(".motiu-btn").forEach(b=>b.classList.remove("sel"));
-  btn.classList.add("sel"); G.motiuSel=m;
-}
-
+function selMotiu(b,m){document.querySelectorAll(".mb").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");G.motiuSel=m;}
 function guardarInc(){
-  const desc=$("inc-desc").value.trim();
+  const desc=$("mdesc").value.trim();
   G.incidencies.push({tipus:G.motiuSel,desc,ts:now()});
   audit("AFEGIR_INC",{caixa_id:G.caixaActiva?.id,tipus:G.motiuSel,desc});
-  tancarModal();
-  renderIncidencies();
-  actualitzarSteps();
+  tancarModal();renderIncs();actualitzarSteps();
 }
-
-function eliminarInc(idx){
-  audit("ELIMINAR_INC",{caixa_id:G.caixaActiva?.id,inc:G.incidencies[idx]});
-  G.incidencies.splice(idx,1);
-  renderIncidencies();
-  actualitzarSteps();
-}
-
-function renderIncidencies(){
+function eliminarInc(i){audit("ELIMINAR_INC",{caixa_id:G.caixaActiva?.id,inc:G.incidencies[i]});G.incidencies.splice(i,1);renderIncs();actualitzarSteps();}
+function renderIncs(){
   const n=G.incidencies.length;
-  const badge=$("inc-count-badge");
-  badge.textContent=n; badge.style.display=n>0?"inline":"none";
-  if(n===0){$("inc-list").innerHTML='<div class="inc-empty">Cap incidència registrada — opcional</div>';return;}
-  let html="";
-  G.incidencies.forEach((inc,i)=>{
-    html+=`<div class="inc-item-reg">
-      <div class="inc-item-reg-info">
-        <div class="inc-item-reg-nom">${inc.tipus}</div>
-        ${inc.desc?`<div class="inc-item-reg-mot">${inc.desc}</div>`:""}
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">${inc.ts}</div>
-      </div>
-      <button class="btn-del-inc" onclick="eliminarInc(${i})" title="Eliminar">✕</button>
-    </div>`;
-  });
-  $("inc-list").innerHTML=html;
+  const b=$("incbdg");b.textContent=n;b.style.display=n>0?"inline":"none";
+  if(!n){$("inclist").innerHTML='<div class="ine">Cap incidència — opcional</div>';return;}
+  $("inclist").innerHTML=G.incidencies.map((inc,i)=>`<div class="inir"><div class="inirf"><div class="inirn">${inc.tipus}</div>${inc.desc?`<div class="inirm">${inc.desc}</div>`:""}<div style="font-size:10px;color:var(--muted);margin-top:2px">${inc.ts}</div></div><button class="bdi" onclick="eliminarInc(${i})">✕</button></div>`).join("");
 }
+function tancarModal(e){if(e&&e.target!==$("mov"))return;$("mov").classList.remove("open");}
 
-function tancarModal(e){
-  if(e&&e.target!==$("modal-overlay"))return;
-  $("modal-overlay").classList.remove("open");
-}
-
-// ── FINALITZAR ────────────────────────────────────────────────────────────
+// ── FINALITZAR ─────────────────────────────────────────────────────────
 async function finalitzar(){
-  const c=G.caixaActiva;
-  const nom=G.perfil?.nom_complet||G.user?.email||"—";
+  const c=G.caixaActiva,nom=G.perfil?.nom_complet||G.user?.email||"—";
   const estat=G.incidencies.length>0?"incompleta":"completa";
-  const reg={
-    id:c.id, nom:c.nom, servei:c.servei, tipus:c.tipus, empresa:c.empresa,
-    operari:nom, data:now(), estat,
-    incidencies:G.incidencies,
-    fotoOberta:G.fotoOberta, fotoTancada:G.fotoTancada,
-  };
+  const torn=tornActual();
+  const reg={id:c.id,nom:c.nom,servei:c.servei,tipus:c.tipus,empresa:c.empresa,operari:nom,operari_id:G.user.id,data:now(),torn,estat,incidencies:G.incidencies,fotoOberta:G.fotoOberta,fotoOberteData:G.fotoOberteData,fotoTancada:G.fotoTancada,fotoTancadaData:G.fotoTancadaData,created_at:new Date().toISOString()};
   loading(true,"Guardant registre...");
-  await sb.from("registres").insert({
-    caixa_id:c.id, caixa_nom:c.nom, servei:c.servei,
-    tipus:c.tipus, empresa:c.empresa||null,
-    operari_id:G.user.id, operari_nom:nom,
-    estat, incidencies:G.incidencies,
-    foto:true, total_esp:1, total_ok:1,
-    created_at:new Date().toISOString()
-  });
+  await sb.from("registres").insert({caixa_id:c.id,caixa_nom:c.nom,servei:c.servei,tipus:c.tipus,empresa:c.empresa||null,operari_id:G.user.id,operari_nom:nom,torn,estat,incidencies:G.incidencies,foto:true,total_esp:1,total_ok:1,created_at:new Date().toISOString()});
   loading(false);
-  await audit("TANCAR_CAIXA",{caixa_id:c.id,caixa_nom:c.nom,estat,num_incidencies:G.incidencies.length,foto_oberta:G.fotoOberta,foto_tancada:G.fotoTancada});
+  await audit("TANCAR_CAIXA",{caixa_id:c.id,estat,torn,num_inc:G.incidencies.length,foto_oberta:G.fotoOberta,foto_tancada:G.fotoTancada});
   G.registres.unshift(reg);
-  const cnt=G.registres.length;
-  $("hist-badge").textContent=cnt; $("hist-badge").style.display=cnt>0?"inline":"none";
-  renderResultat(reg);
-  showContent("resultat");
+  const cnt=G.registres.length;$("hbdg").textContent=cnt;$("hbdg").style.display=cnt>0?"inline":"none";
+  renderResultat(reg);showContent("res");
 }
 
-// ── RESULTAT ──────────────────────────────────────────────────────────────
+// ── RESULTAT ───────────────────────────────────────────────────────────
 function renderResultat(reg){
-  const color=estatColor(reg.estat);
+  const col=estatColor(reg.estat);
   const etiq=reg.estat==="completa"?"✓ Caixa tancada correctament":"⚠ Tancada amb incidències";
-  let html=`<div class="res-hero" style="border-color:${color}">
-    <div class="res-estat" style="color:${color}">${etiq}</div>
-    <div class="res-nom">${reg.nom}</div>
-    <div class="res-meta">${reg.id} · ${reg.servei} · ${reg.data}</div>
+  $("resbody").innerHTML=`
+  <div class="resh" style="border-color:${col}">
+    <div style="font-size:15px;font-weight:700;color:${col};margin-bottom:4px">${etiq}</div>
+    <div style="font-size:22px;font-weight:800;color:var(--navy)">${reg.nom}</div>
+    <div style="font-size:12px;color:var(--slate);margin-top:4px">${reg.id} · ${reg.servei} · ${reg.data} · Torn ${reg.torn}</div>
   </div>
-  <div class="res-grid">
-    <div class="res-bloc">
-      <div class="res-bloc-tit">Evidència fotogràfica</div>
-      <div class="res-foto-row">${reg.fotoOberta?"✅":"❌"} Foto caixa oberta</div>
-      <div class="res-foto-row">${reg.fotoTancada?"✅":"❌"} Foto caixa tancada</div>
+  <div class="resg">
+    <div class="resb"><div class="resbt">Evidència fotogràfica</div>
+      <div style="font-size:13px;margin-bottom:4px">${reg.fotoOberta?"✅":"❌"} Foto caixa oberta</div>
+      <div style="font-size:13px">${reg.fotoTancada?"✅":"❌"} Foto caixa tancada</div>
     </div>
-    <div class="res-bloc">
-      <div class="res-bloc-tit">Incidències</div>
-      ${reg.incidencies.length===0
-        ? '<div style="font-size:13px;color:var(--green);font-weight:600">✓ Cap incidència</div>'
-        : reg.incidencies.map(i=>`<div style="font-size:12px;color:var(--red);margin-bottom:3px">⚠ ${i.tipus}${i.desc?" — "+i.desc:""}</div>`).join("")
-      }
+    <div class="resb"><div class="resbt">Incidències (${reg.incidencies.length})</div>
+      ${reg.incidencies.length===0?'<div style="font-size:13px;color:var(--green);font-weight:600">✓ Cap incidència</div>':reg.incidencies.map(i=>`<div style="font-size:12px;color:var(--red);margin-bottom:3px">⚠ ${i.tipus}${i.desc?" — "+i.desc:""}</div>`).join("")}
     </div>
   </div>
-  <div class="audit-box">
-    <div class="audit-tit">Registre d'auditoria</div>
-    <div class="audit-row"><span class="audit-k">Operari</span><span class="audit-v">${reg.operari}</span></div>
-    <div class="audit-row"><span class="audit-k">Data i hora</span><span class="audit-v">${reg.data}</span></div>
-    <div class="audit-row"><span class="audit-k">Estat</span><span class="audit-v" style="color:${color}">${reg.estat}</span></div>
-    <div class="audit-row"><span class="audit-k">Foto oberta</span><span class="audit-v">${reg.fotoOberta?"✓ Sí":"— No"}</span></div>
-    <div class="audit-row"><span class="audit-k">Foto tancada</span><span class="audit-v">${reg.fotoTancada?"✓ Sí":"— No"}</span></div>
-    <div class="audit-row"><span class="audit-k">Tipus material</span><span class="audit-v">${reg.tipus==="extern"?`Extern · ${reg.empresa}`:"Material propi"}</span></div>
+  <div class="aub"><div class="aut">Registre d'auditoria</div>
+    <div class="aur"><span class="auk">Operari</span><span class="auv">${reg.operari}</span></div>
+    <div class="aur"><span class="auk">Data i hora</span><span class="auv">${reg.data}</span></div>
+    <div class="aur"><span class="auk">Torn</span><span class="auv">${reg.torn==="dia"?"Dia (08–20h)":"Nit (20–08h)"}</span></div>
+    <div class="aur"><span class="auk">Estat</span><span class="auv" style="color:${col}">${reg.estat}</span></div>
+    <div class="aur"><span class="auk">Foto oberta</span><span class="auv">${reg.fotoOberta?"✓ Sí":"— No"}</span></div>
+    <div class="aur"><span class="auk">Foto tancada</span><span class="auv">${reg.fotoTancada?"✓ Sí":"— No"}</span></div>
   </div>
-  <div class="res-actions">
-    <button class="btn-gray" onclick="tornarACaixes()">← Nova caixa</button>
-    <button class="btn-ghost" onclick="renderHistorial();$('historial-panel').classList.add('show')">Veure historial</button>
-  </div><div style="height:24px"></div>`;
-  $("resultat-body").innerHTML=html;
+  <div style="display:flex;gap:10px;padding-bottom:24px">
+    <button class="bgr" onclick="tornarACaixes()">← Nova caixa</button>
+    <button class="bgh" onclick="renderHistorial();$('hp').classList.add('show')">Veure historial</button>
+  </div>`;
 }
-function tornarACaixes(){showContent("empty");G.caixaActiva=null;renderCaixes($("cerca-inp").value);}
+function tornarACaixes(){
+  G.caixaActiva=null;renderCaixes($("cerca").value);
+  if(esSupOInf())showContent("sup");
+  else showContent("empty");
+}
 
-// ── HISTORIAL ─────────────────────────────────────────────────────────────
-function renderHistorial(){
-  const regs=G.registres;
-  if(regs.length===0){$("historial-body").innerHTML=`<div class="empty-hist">Sense registres encara.</div>`;return;}
-  let html="";
+// ── PANELL SUPERVISORA / INFERMERIA ────────────────────────────────────
+function renderSupPanel(){
+  const rol=G.perfil?.rol||"TCAE";
+  // Filtra registres segons rol
+  let regs=G.registres.filter(r=>{
+    if(!esDinsFiltre(r))return false;
+    if(rol==="Infermeria"){
+      // Veu els del torn actual
+      const torn=tornActual();
+      return tornDeData(r.created_at||r.data)===torn;
+    }
+    return true; // Supervisora/Admin veu tot
+  });
+
+  // Stats
+  const nTotal=regs.length;
+  const nComp=regs.filter(r=>r.estat==="completa").length;
+  const nInc=regs.filter(r=>r.estat==="incompleta").length;
+  const nIncTotal=regs.reduce((a,r)=>a+(r.incidencies?.length||0),0);
+  $("spstats").innerHTML=`
+    <div class="sup-stat"><span class="ss-n" style="color:var(--navy)">${nTotal}</span><div class="ss-l">Registres</div></div>
+    <div class="sup-stat"><span class="ss-n" style="color:var(--green)">${nComp}</span><div class="ss-l">Completes</div></div>
+    <div class="sup-stat"><span class="ss-n" style="color:var(--amber)">${nInc}</span><div class="ss-l">Amb incidències</div></div>
+    <div class="sup-stat"><span class="ss-n" style="color:var(--red)">${nIncTotal}</span><div class="ss-l">Total incidències</div></div>`;
+
+  if(!regs.length){$("sptaula").innerHTML=`<div style="padding:40px;text-align:center;color:var(--muted);font-size:14px">Cap registre en el període seleccionat</div>`;return;}
+
+  let h=`<div class="st-hdr"><span>Caixa</span><span>Operari</span><span>Data · Torn</span><span>Estat</span><span>Fotos</span></div>`;
   regs.forEach(r=>{
-    const color=estatColor(r.estat);
-    html+=`<div class="hist-card" style="border-left-color:${color}">
-      <div class="hist-top"><span class="hist-nom">${r.nom}</span><span class="hist-estat" style="color:${color};background:${color}18">${r.estat}</span></div>
-      <div class="hist-meta">${r.id} · ${r.operari} · ${r.data}</div>
-      ${r.incidencies.map(i=>`<div class="hist-inc">⚠ ${i.tipus}${i.desc?" — "+i.desc:""}</div>`).join("")}
-      <div class="hist-foto">📷 ${r.fotoOberta?"Oberta ✓":"Oberta ✗"} · ${r.fotoTancada?"Tancada ✓":"Tancada ✗"}</div>
+    const col=estatColor(r.estat);
+    h+=`<div class="st-row">
+      <div><div class="st-nom">${r.nom}</div><div class="st-sub">${r.id} · ${r.servei}</div></div>
+      <div style="font-size:12px">${r.operari?.split(",")[0]||r.operari}</div>
+      <div style="font-size:11px;color:var(--slate)">${r.data}<br><span style="font-weight:600">${r.torn==="dia"?"Dia":"Nit"}</span></div>
+      <div><span class="st-estat" style="color:${col};background:${col}18">${r.estat}</span>${r.incidencies?.length>0?`<div style="font-size:10px;color:var(--red);margin-top:2px">${r.incidencies.length} inc.</div>`:""}</div>
+      <div class="st-foto">${r.fotoOberta?"📷":"❌"} ${r.fotoTancada?"📷":"❌"}</div>
     </div>`;
   });
-  $("historial-body").innerHTML=html;
+  $("sptaula").innerHTML=h;
+}
+
+// ── GENERAR PDF ────────────────────────────────────────────────────────
+function generarPDF(){
+  const rol=G.perfil?.rol||"TCAE";
+  let regs=G.registres.filter(r=>esDinsFiltre(r));
+  if(!regs.length){alert("No hi ha registres per al període seleccionat.");return;}
+
+  const filData=$("spdata")?.value||"avui";
+  const filTorn=$("sptorn")?.value||"tot";
+  const titPeriode=filData==="avui"?"Avui":filData==="ahir"?"Ahir":filData==="setmana"?"Aquesta setmana":"Tot";
+  const titTorn=filTorn==="dia"?"Torn dia (08–20h)":filTorn==="nit"?"Torn nit (20–08h)":"Tots els torns";
+
+  // Construeix el HTML del PDF
+  // 2-3 registres per pàgina A4
+  const REG_PER_PAG=3;
+  const pagines=[];
+  for(let i=0;i<regs.length;i+=REG_PER_PAG){pagines.push(regs.slice(i,i+REG_PER_PAG));}
+
+  let html=``;
+  pagines.forEach((pag,pi)=>{
+    html+=`<div class="pdf-page">
+      <div class="pdf-header">
+        <div>
+          <div class="pdf-logo">SteriControl <span class="pdf-vh">VH</span></div>
+          <div style="font-size:10px;color:#64748b;margin-top:2px">Hospital Materno-Infantil · Esterilització Central</div>
+        </div>
+        <div class="pdf-meta">
+          <div><strong>Informe:</strong> ${titPeriode} · ${titTorn}</div>
+          <div><strong>Generat per:</strong> ${G.perfil?.nom_complet||G.user?.email}</div>
+          <div><strong>Data generació:</strong> ${now()}</div>
+          <div>Pàgina ${pi+1} de ${pagines.length}</div>
+        </div>
+      </div>`;
+    pag.forEach(r=>{
+      const col=estatColor(r.estat);
+      html+=`<div class="pdf-reg">
+        <div class="pdf-reg-header">
+          <div>
+            <div class="pdf-reg-nom">${r.nom}</div>
+            <div class="pdf-reg-meta">${r.id} · ${r.servei} · ${r.data} · Torn ${r.torn==="dia"?"Dia (08–20h)":"Nit (20–08h)"} · Operari: ${r.operari}</div>
+          </div>
+          <span class="pdf-reg-estat" style="color:${col};background:${col}18">${r.estat}</span>
+        </div>`;
+      // Fotos
+      if(r.fotoOberteData||r.fotoTancadaData){
+        html+=`<div class="pdf-fotos">`;
+        if(r.fotoOberta){html+=`<div class="pdf-foto">${r.fotoOberteData?`<img src="${r.fotoOberteData}" alt="Oberta"/>`:`<div style="height:80px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8">Sense imatge</div>`}<div class="pdf-foto-lbl">📷 Caixa OBERTA</div></div>`;}
+        if(r.fotoTancada){html+=`<div class="pdf-foto">${r.fotoTancadaData?`<img src="${r.fotoTancadaData}" alt="Tancada"/>`:`<div style="height:80px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8">Sense imatge</div>`}<div class="pdf-foto-lbl">📷 Caixa TANCADA</div></div>`;}
+        html+=`</div>`;
+      } else {
+        html+=`<div style="font-size:10px;color:#94a3b8;margin-bottom:6px">📷 Evidència fotogràfica: ${r.fotoOberta?"Oberta ✓":"Oberta ✗"} · ${r.fotoTancada?"Tancada ✓":"Tancada ✗"} (imatge no disponible en vista prèvia)</div>`;
+      }
+      // Incidències
+      if(r.incidencies?.length>0){
+        html+=`<div class="pdf-incs">`;
+        r.incidencies.forEach(i=>{html+=`<div class="pdf-inc">⚠ ${i.tipus}${i.desc?" — "+i.desc:""} · ${i.ts}</div>`;});
+        html+=`</div>`;
+      } else {
+        html+=`<div style="font-size:10px;color:#16a34a">✓ Cap incidència registrada</div>`;
+      }
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  });
+
+  // Obre finestra d'impressió
+  const w=window.open("","_blank","width=800,height=900");
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SteriControl — Informe ${titPeriode}</title><style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:Arial,sans-serif;font-size:11px;color:#000;background:#fff;}
+    .pdf-page{padding:20px;max-width:210mm;margin:0 auto;page-break-after:always;}
+    .pdf-page:last-child{page-break-after:avoid;}
+    .pdf-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:10px;margin-bottom:14px;}
+    .pdf-logo{font-size:18px;font-weight:900;color:#0f172a;}
+    .pdf-vh{color:#2563eb;}
+    .pdf-meta{font-size:10px;color:#64748b;text-align:right;line-height:1.5;}
+    .pdf-reg{border:1px solid #e2e8f0;border-radius:5px;padding:10px;margin-bottom:10px;break-inside:avoid;}
+    .pdf-reg-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+    .pdf-reg-nom{font-size:13px;font-weight:700;}
+    .pdf-reg-meta{font-size:10px;color:#64748b;margin-top:2px;}
+    .pdf-reg-estat{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;}
+    .pdf-fotos{display:flex;gap:8px;margin-bottom:8px;}
+    .pdf-foto{flex:1;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden;}
+    .pdf-foto img{width:100%;height:90px;object-fit:cover;display:block;}
+    .pdf-foto-lbl{font-size:9px;color:#64748b;padding:3px 6px;background:#f8fafc;text-align:center;}
+    .pdf-incs{margin-top:6px;}
+    .pdf-inc{font-size:10px;color:#dc2626;padding:3px 6px;background:#fef2f2;border-radius:3px;margin-bottom:2px;}
+    @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}}
+  </style></head><body>${html}</body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),500);
+  audit("GENERAR_PDF",{periode:filData,torn:filTorn,num_registres:regs.length});
+}
+
+// ── HISTORIAL ──────────────────────────────────────────────────────────
+function renderHistorial(){
+  // TCAE veu només els seus; Infermeria veu els del torn; Supervisora veu tot
+  const rol=G.perfil?.rol||"TCAE";
+  let regs=G.registres;
+  if(rol==="TCAE"){regs=regs.filter(r=>r.operari_id===G.user.id||r.operari===G.perfil?.nom_complet);}
+  else if(rol==="Infermeria"){const t=tornActual();regs=regs.filter(r=>tornDeData(r.created_at||r.data)===t);}
+
+  if(!regs.length){$("hpbody").innerHTML=`<div class="ehist">Sense registres encara.</div>`;return;}
+  $("hpbody").innerHTML=regs.map(r=>{
+    const col=estatColor(r.estat);
+    return`<div class="hc" style="border-left-color:${col}">
+      <div class="hct"><span class="hcn">${r.nom}</span><span class="hce" style="color:${col};background:${col}18">${r.estat}</span></div>
+      <div class="hcm">${r.id} · ${r.operari?.split(",")[0]} · ${r.data} · Torn ${r.torn==="dia"?"Dia":"Nit"}</div>
+      ${(r.incidencies||[]).map(i=>`<div class="hci">⚠ ${i.tipus}${i.desc?" — "+i.desc:""}</div>`).join("")}
+      <div class="hcf">📷 ${r.fotoOberta?"Oberta ✓":"Oberta ✗"} · ${r.fotoTancada?"Tancada ✓":"Tancada ✗"}</div>
+    </div>`;
+  }).join("")+`<div style="height:24px"></div>`;
 }
 </script>
 </body>
