@@ -137,11 +137,24 @@ input  { font-family: var(--font); outline: none; }
 .prog-pct { font-size:12px; color:var(--slate); font-weight:600; text-align:right; }
 
 /* Foto card */
-.foto-card { display:flex; align-items:center; gap:8px; border:1.5px dashed var(--border); border-radius:9px; padding:9px 14px; cursor:pointer; margin-top:10px; transition:all .2s; background:var(--white); }
+.foto-card { display:flex; align-items:center; gap:8px; border:1.5px dashed var(--border); border-radius:9px; padding:9px 14px; cursor:pointer; margin-top:8px; transition:all .2s; background:var(--white); }
 .foto-card:hover { border-color:var(--blue); background:var(--blue-light); }
 .foto-card.done { border-color:var(--green3); background:var(--green2); border-style:solid; }
 .foto-txt { font-size:13px; color:var(--slate); }
 .foto-card.done .foto-txt { color:#15803d; font-weight:600; }
+.fotos-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+/* Extern simplified */
+.extern-check { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:10px; }
+.extern-check-title { font-size:13px; font-weight:700; color:var(--navy); margin-bottom:12px; }
+.extern-opcio { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; margin-bottom:6px; transition:all .15s; }
+.extern-opcio:hover { border-color:var(--blue); background:var(--blue-light); }
+.extern-opcio.sel-ok  { border-color:var(--green); background:var(--green2); }
+.extern-opcio.sel-inc { border-color:var(--red); background:var(--red2); }
+.extern-opcio-dot { width:22px; height:22px; border-radius:50%; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; }
+.extern-opcio.sel-ok  .extern-opcio-dot { background:var(--green); border-color:var(--green); color:#fff; }
+.extern-opcio.sel-inc .extern-opcio-dot { background:var(--red); border-color:var(--red); color:#fff; }
+.extern-obs { width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; resize:vertical; margin-top:8px; font-family:var(--font); }
+.extern-obs:focus { border-color:var(--blue); outline:none; }
 
 /* Ext alert */
 .ext-alert { display:flex; align-items:center; gap:7px; background:var(--purple2); border:1px solid var(--purple3); border-radius:8px; padding:8px 12px; font-size:12px; color:#6d28d9; font-weight:500; margin-top:8px; }
@@ -365,13 +378,41 @@ input  { font-family: var(--font); outline: none; }
               <div class="prog-pct" id="prog-pct">0%</div>
             </div>
           </div>
-          <div id="foto-card" class="foto-card" onclick="toggleFoto()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
-            <span class="foto-txt" id="foto-txt">Capturar evidència fotogràfica de la caixa</span>
+          <div class="fotos-row" id="fotos-row">
+            <div id="foto-oberta" class="foto-card" onclick="toggleFoto('oberta')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
+              <span class="foto-txt" id="foto-oberta-txt">📷 Foto caixa oberta</span>
+            </div>
+            <div id="foto-tancada" class="foto-card" onclick="toggleFoto('tancada')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
+              <span class="foto-txt" id="foto-tancada-txt">📷 Foto caixa tancada</span>
+            </div>
           </div>
           <div id="ext-alert" class="ext-alert" style="display:none"></div>
         </div>
-        <div class="munt-body" id="instrumental-list"></div>
+        <div class="munt-body" id="instrumental-list">
+        </div>
+        <!-- Panell simplificat per a material extern -->
+        <div id="extern-panel" style="display:none;flex:1;overflow-y:auto;padding:16px 24px">
+          <div class="extern-check">
+            <div class="extern-check-title">Verificació del set de material extern</div>
+            <div class="extern-opcio" id="ext-op-ok" onclick="selExtOpcio('ok')">
+              <div class="extern-opcio-dot" id="ext-dot-ok"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--navy)">Set complet i en bon estat</div>
+                <div style="font-size:11px;color:var(--slate)">Totes les peces presents, sense danys visibles</div>
+              </div>
+            </div>
+            <div class="extern-opcio" id="ext-op-inc" onclick="selExtOpcio('inc')">
+              <div class="extern-opcio-dot" id="ext-dot-inc"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--navy)">Set incomplet o amb incidències</div>
+                <div style="font-size:11px;color:var(--slate)">Falten peces, danys o altres problemes</div>
+              </div>
+            </div>
+            <textarea id="ext-obs" class="extern-obs" rows="3" placeholder="Observacions (opcional): descriu l'estat del set, peces faltants, danys..."></textarea>
+          </div>
+        </div>
         <div class="munt-footer">
           <div class="pend-msg" id="pend-msg" style="display:none"></div>
           <button class="btn-fi" id="btn-fi" disabled onclick="finalitzar()">Tancar caixa</button>
@@ -421,14 +462,14 @@ input  { font-family: var(--font); outline: none; }
 // ══════════════════════════════════════════════════════════════════════════
 // ⚙️  CONFIGURACIÓ — canvia aquestes 2 línies
 // ══════════════════════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'https://cnfkwmswlnmhtflfumdn.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuZmt3bXN3bG5taHRmbGZ1bWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTkzNDYsImV4cCI6MjA5NjczNTM0Nn0.cJFq5vqV4at5_MDpJWfV5fDxchm9vfgNc1bSkCcduiw';
+const SUPABASE_URL  = 'https://EL-TEU-PROJECTE.supabase.co';
+const SUPABASE_ANON = 'LA-TEVA-ANON-KEY';
 // ══════════════════════════════════════════════════════════════════════════
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const MOTIUS = ["En reparació","Extraviado","Retingut a quiròfan","Pendent d'esterilització","Contaminat","Deteriorat / trencat","Material extern pendent","Altre"];
 
-let G = { user:null, perfil:null, caixes:[], caixaActiva:null, items:[], foto:false, registres:[], modalUid:null, motiuSel:MOTIUS[0] };
+let G = { user:null, perfil:null, caixes:[], caixaActiva:null, items:[], fotoOberta:false, fotoTancada:false, externEstat:null, registres:[], modalUid:null, motiuSel:MOTIUS[0] };
 
 // ── UTILS ─────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -470,7 +511,32 @@ function showContent(which){
   else if(which==="resultat"){ $("resultat-panel").style.display="flex"; }
 }
 
-// ── AUTH ──────────────────────────────────────────────────────────────────
+// ── AUDIT LOG ─────────────────────────────────────────────────────────────
+// Registra cada acció de l'usuari a Supabase
+async function audit(accio, detall={}){
+  if(!G.user) return;
+  try {
+    await sb.from("audit_log").insert({
+      usuari_id: G.user.id,
+      usuari_nom: G.perfil?.nom_complet || G.user.email,
+      accio,
+      detall,
+      created_at: new Date().toISOString()
+    });
+  } catch(e){ console.warn("Audit error:", e); }
+}
+
+// ── VALIDACIÓ CODI VH / QR ────────────────────────────────────────────────
+// Accepta: VH12345, VH12345-1, VH-12345, QR qualsevol format
+function normalitzarCodiVH(codi){
+  if(!codi) return null;
+  const net = codi.trim().toUpperCase();
+  // Patrons VH: VH12345, VH12345-1, VH-12345, VHXXXXX-X
+  if(/^VH-?\d{4,6}(-\d+)?$/.test(net)) return net;
+  // QR genèric (mínim 4 caràcters)
+  if(net.length >= 4) return net;
+  return null;
+}
 async function init(){
   loading(true,"Comprovant sessió...");
   const{data:{session}}=await sb.auth.getSession();
@@ -527,6 +593,7 @@ async function login(){
   if(error){showMsg("login-msg","Correu o contrasenya incorrectes","err");return;}
   G.user=data.user;
   await carregarPerfil();
+  audit("LOGIN", {email: G.user.email});
   if(G.perfil?.pwd_caducada){$("login-form").style.display="none";$("cambio-form").style.display="block";return;}
   await carregarCaixes();
   mostrarApp();
@@ -552,8 +619,9 @@ async function canviPwd(){
   setTimeout(async()=>{ await carregarCaixes(); mostrarApp(); },1200);
 }
 async function logout(){
+  await audit("LOGOUT", {});
   await sb.auth.signOut();
-  G={user:null,perfil:null,caixes:[],caixaActiva:null,items:[],foto:false,registres:[],modalUid:null,motiuSel:MOTIUS[0]};
+  G={user:null,perfil:null,caixes:[],caixaActiva:null,items:[],fotoOberta:false,fotoTancada:false,externEstat:null,registres:[],modalUid:null,motiuSel:MOTIUS[0]};
   $("inp-email").value=""; $("inp-pass").value="";
   hideMsg("login-msg");
   $("login-form").style.display="block"; $("cambio-form").style.display="none";
@@ -600,7 +668,7 @@ function abrirCaixaPerId(id){ const c=G.caixes.find(x=>x.id===id); if(c) abrirCa
 
 // ── MUNTATGE ──────────────────────────────────────────────────────────────
 function abrirCaixa(c){
-  G.caixaActiva=c; G.items=expandir(c.instrumental||[]); G.foto=false;
+  G.caixaActiva=c; G.items=expandir(c.instrumental||[]); G.fotoOberta=false; G.fotoTancada=false; G.externEstat=null;
   renderCaixes($("cerca-inp").value);
   $("munt-nom").textContent=c.nom;
   $("munt-sub").textContent=`${c.id} · ${c.servei}${c.destino?" · "+c.destino:""}`;
@@ -608,11 +676,71 @@ function abrirCaixa(c){
   const extEl=$("ext-alert");
   if(c.tipus==="extern"){extEl.textContent=`📦 Material de préstec extern · ${c.empresa} · Ref: ${c.ref_externa||c.id}`;extEl.style.display="flex";}
   else extEl.style.display="none";
-  $("foto-card").classList.remove("done"); $("foto-txt").textContent="Capturar evidència fotogràfica de la caixa";
-  renderMuntatge();
+  // Reset fotos
+  $("foto-oberta").classList.remove("done"); $("foto-oberta-txt").textContent="📷 Foto caixa oberta";
+  $("foto-tancada").classList.remove("done"); $("foto-tancada-txt").textContent="📷 Foto caixa tancada";
+  // Mostra panell correcte: extern simplificat o instrumental complet
+  if(c.tipus==="extern"){
+    $("instrumental-list").style.display="none";
+    $("extern-panel").style.display="flex";
+    $("extern-panel").style.flexDirection="column";
+    $("ext-op-ok").className="extern-opcio"; $("ext-op-inc").className="extern-opcio";
+    $("ext-dot-ok").textContent=""; $("ext-dot-inc").textContent="";
+    $("ext-obs").value="";
+  } else {
+    $("instrumental-list").style.display="block";
+    $("extern-panel").style.display="none";
+    renderMuntatge();
+  }
   showContent("muntatge");
+  audit("OBRIR_CAIXA", {caixa_id: c.id, caixa_nom: c.nom, servei: c.servei, tipus: c.tipus});
 }
-function toggleFoto(){ G.foto=true; $("foto-card").classList.add("done"); $("foto-txt").textContent=`✓ Evidència fotogràfica registrada · ${now()}`; }
+
+function toggleFoto(tipus){
+  if(tipus==="oberta"){
+    G.fotoOberta=true;
+    $("foto-oberta").classList.add("done");
+    $("foto-oberta-txt").textContent=`✓ Foto oberta · ${now()}`;
+    audit("FOTO", {tipus:"oberta", caixa_id: G.caixaActiva?.id});
+  } else {
+    G.fotoTancada=true;
+    $("foto-tancada").classList.add("done");
+    $("foto-tancada-txt").textContent=`✓ Foto tancada · ${now()}`;
+    audit("FOTO", {tipus:"tancada", caixa_id: G.caixaActiva?.id});
+  }
+  // Redibuixa footer per si ja es pot tancar
+  if(G.caixaActiva?.tipus==="extern") checkExternPotTancar();
+  else renderMuntatge();
+}
+
+function selExtOpcio(opcio){
+  G.externEstat=opcio;
+  $("ext-op-ok").className="extern-opcio"+(opcio==="ok"?" sel-ok":"");
+  $("ext-op-inc").className="extern-opcio"+(opcio==="inc"?" sel-inc":"");
+  $("ext-dot-ok").textContent=opcio==="ok"?"✓":"";
+  $("ext-dot-inc").textContent=opcio==="inc"?"✗":"";
+  checkExternPotTancar();
+}
+
+function checkExternPotTancar(){
+  const btnFi=$("btn-fi"), pendMsg=$("pend-msg");
+  const potTancar=G.externEstat!==null && G.fotoOberta && G.fotoTancada;
+  const mancaFoto=!G.fotoOberta||!G.fotoTancada;
+  const mancaOpcio=G.externEstat===null;
+  if(potTancar){
+    btnFi.disabled=false;
+    btnFi.style.background=G.externEstat==="inc"?"#92400e":"#15803d";
+    btnFi.textContent=G.externEstat==="inc"?"⚠ Tancar set — Incidències registrades":"✓ Tancar set extern — Complet";
+    pendMsg.style.display="none";
+  } else {
+    btnFi.disabled=true; btnFi.textContent="Tancar set";
+    const msgs=[];
+    if(mancaOpcio) msgs.push("selecciona l'estat del set");
+    if(!G.fotoOberta) msgs.push("foto caixa oberta");
+    if(!G.fotoTancada) msgs.push("foto caixa tancada");
+    pendMsg.textContent=`Pendent: ${msgs.join(" · ")}`; pendMsg.style.display="block";
+  }
+}
 
 function renderMuntatge(){
   const items=G.items;
@@ -632,16 +760,22 @@ function renderMuntatge(){
     html+=`<div class="grup-wrap"><div class="grup-hdr"><span class="grup-nom">${g.nom}</span>${g.critic?'<span class="crit-dot">●</span>':""}<span class="grup-cnt">${g.unitats.length} ud.</span></div>`;
     g.unitats.forEach(item=>{
       const isOk=item.estat==="ok", isInc=item.estat&&item.estat!=="ok";
+      const codiVH=item.codiVH||"";
       html+=`<div class="unit-row ${isOk?"ok":isInc?"inc":""}">
         <div class="unit-left">
           <div class="unit-dot ${isOk?"ok":isInc?"inc":""}">${isOk?"✓":isInc?"✗":""}</div>
           <div class="unit-info">
             <div class="unit-nom">${item.unitat?`Unitat ${item.unitat}`:"Unitat única"}<span class="unit-id"> · ${item.uid}</span></div>
-            ${isInc?`<div class="unit-motiu">${item.estat}</div>`:`<div class="unit-pend">${isOk?"":"Sense verificar"}</div>`}
+            ${isInc?`<div class="unit-motiu">${item.estat}</div>`:`<div class="unit-pend">${isOk?(codiVH?`<span style="font-family:monospace;color:var(--green);font-weight:600">${codiVH}</span>`:"verificat manualment"):"Sense verificar"}</div>`}
           </div>
         </div>
         <div class="unit-actions">
-          <button class="act-btn ${isOk?"ok":""}" onclick="marcarOk('${item.uid}')" title="Marcar present">✓</button>
+          <input id="vh-${item.uid}" type="text" placeholder="VHxxxxx o QR" value="${codiVH}"
+            style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:monospace;background:${isOk?"var(--green2)":"var(--white)"}"
+            onkeydown="if(event.key==='Enter'){escanejarVH('${item.uid}',this.value);this.blur();}"
+            onclick="event.stopPropagation()"
+            title="Escaneja o escriu el codi VH / QR de l'instrument i prem Enter" />
+          <button class="act-btn ${isOk?"ok":""}" onclick="marcarOk('${item.uid}')" title="Marcar present manualment">✓</button>
           <button class="act-btn ${isInc?"inc":""}" onclick="obrirModal('${item.uid}')" title="Incidència">✗</button>
         </div>
       </div>`;
@@ -653,25 +787,70 @@ function renderMuntatge(){
   const llest=nPend===0; const estat=calcEstat(items);
   const btnFi=$("btn-fi"); const pendMsg=$("pend-msg");
   if(llest){
-    btnFi.disabled=false;
-    btnFi.style.background=estat==="bloquejada"?"#991b1b":estat==="incompleta"?"#92400e":"#15803d";
-    btnFi.textContent=estat==="completa"?"✓ Tancar caixa — Completa":estat==="incompleta"?"⚠ Tancar — Incompleta autoritzada":"✕ BLOQUEJADA — Material crític faltant";
-    pendMsg.style.display="none";
+    const faltaFoto=!G.fotoOberta||!G.fotoTancada;
+    if(faltaFoto){
+      btnFi.disabled=true; btnFi.textContent="Tancar caixa";
+      const manca=[];
+      if(!G.fotoOberta) manca.push("foto caixa oberta");
+      if(!G.fotoTancada) manca.push("foto caixa tancada");
+      pendMsg.textContent=`Pendent: ${manca.join(" · ")}`; pendMsg.style.display="block";
+    } else {
+      btnFi.disabled=false;
+      btnFi.style.background=estat==="bloquejada"?"#991b1b":estat==="incompleta"?"#92400e":"#15803d";
+      btnFi.textContent=estat==="completa"?"✓ Tancar caixa — Completa":estat==="incompleta"?"⚠ Tancar — Incompleta autoritzada":"✕ BLOQUEJADA — Material crític faltant";
+      pendMsg.style.display="none";
+    }
   } else {
     btnFi.disabled=true; btnFi.textContent="Tancar caixa";
     pendMsg.textContent=`Queden ${nPend} peces sense verificar`; pendMsg.style.display="block";
   }
 }
-function marcarOk(uid){ const i=G.items.find(x=>x.uid===uid); i.estat=i.estat==="ok"?null:"ok"; renderMuntatge(); }
+function marcarOk(uid){
+  const i=G.items.find(x=>x.uid===uid);
+  const anterior=i.estat;
+  i.estat=i.estat==="ok"?null:"ok";
+  if(i.estat==="ok"){
+    audit("MARCAR_OK",{uid, nom:i.nom, unitat:i.unitat, caixa_id:G.caixaActiva?.id, codi_vh:i.codiVH||null});
+  } else {
+    audit("DESMARCAR",{uid, nom:i.nom, caixa_id:G.caixaActiva?.id});
+  }
+  renderMuntatge();
+}
+
+function escanejarVH(uid, codi){
+  const net = normalitzarCodiVH(codi);
+  if(!net) return;
+  const i=G.items.find(x=>x.uid===uid);
+  if(!i) return;
+  i.codiVH=net;
+  i.estat="ok";
+  audit("SCAN_VH",{uid, nom:i.nom, codi_vh:net, caixa_id:G.caixaActiva?.id});
+  renderMuntatge();
+  // Flash visual al camp
+  const inp=document.getElementById(`vh-${uid}`);
+  if(inp){ inp.style.borderColor="var(--green)"; setTimeout(()=>{ if(inp) inp.style.borderColor=""; },1000); }
+}
 
 async function finalitzar(){
-  const c=G.caixaActiva, estat=calcEstat(G.items);
-  const incidencies=G.items.filter(i=>i.estat&&i.estat!=="ok").map(i=>({nom:i.nom,unitat:i.unitat,motiu:i.estat}));
+  const c=G.caixaActiva;
+  let estat, incidencies, totalEsp, totalOk;
+  if(c.tipus==="extern"){
+    estat=G.externEstat==="ok"?"completa":"incompleta";
+    const obs=$("ext-obs").value.trim();
+    incidencies=obs?[{nom:"Observacions set extern",unitat:null,motiu:obs}]:[];
+    totalEsp=1; totalOk=G.externEstat==="ok"?1:0;
+  } else {
+    estat=calcEstat(G.items);
+    incidencies=G.items.filter(i=>i.estat&&i.estat!=="ok").map(i=>({nom:i.nom,unitat:i.unitat,motiu:i.estat,codi_vh:i.codiVH||null}));
+    totalEsp=G.items.length; totalOk=G.items.filter(i=>i.estat==="ok").length;
+  }
   const nom=G.perfil?.nom_complet||G.user?.email||"—";
-  const reg={id:c.id,nom:c.nom,servei:c.servei,tipus:c.tipus,empresa:c.empresa,operari:nom,data:now(),estat,incidencies,foto:G.foto,totalEsp:G.items.length,totalOk:G.items.filter(i=>i.estat==="ok").length};
+  const fotos={oberta:G.fotoOberta,tancada:G.fotoTancada};
+  const reg={id:c.id,nom:c.nom,servei:c.servei,tipus:c.tipus,empresa:c.empresa,operari:nom,data:now(),estat,incidencies,fotos,totalEsp,totalOk};
   loading(true,"Guardant registre...");
-  await sb.from("registres").insert({caixa_id:c.id,caixa_nom:c.nom,servei:c.servei,tipus:c.tipus,empresa:c.empresa||null,operari_id:G.user.id,operari_nom:nom,estat,incidencies,foto:G.foto,total_esp:reg.totalEsp,total_ok:reg.totalOk,created_at:new Date().toISOString()});
+  await sb.from("registres").insert({caixa_id:c.id,caixa_nom:c.nom,servei:c.servei,tipus:c.tipus,empresa:c.empresa||null,operari_id:G.user.id,operari_nom:nom,estat,incidencies,foto:G.fotoOberta||G.fotoTancada,total_esp:totalEsp,total_ok:totalOk,created_at:new Date().toISOString()});
   loading(false);
+  audit("TANCAR_CAIXA",{caixa_id:c.id,caixa_nom:c.nom,estat,total_esp:totalEsp,total_ok:totalOk,num_incidencies:incidencies.length,foto_oberta:G.fotoOberta,foto_tancada:G.fotoTancada});
   G.registres.unshift(reg);
   const cnt=G.registres.length; const bdg=$("hist-badge"); bdg.textContent=cnt; bdg.style.display=cnt>0?"inline":"none";
   renderResultat(reg);
@@ -690,7 +869,13 @@ function obrirModal(uid){
   $("modal-overlay").classList.add("open");
 }
 function selMotiu(btn,motiu){ document.querySelectorAll(".motiu-btn").forEach(b=>b.classList.remove("sel")); btn.classList.add("sel"); G.motiuSel=motiu; }
-function guardarIncidencia(){ G.items.find(i=>i.uid===G.modalUid).estat=G.motiuSel; tancarModal(); renderMuntatge(); }
+function guardarIncidencia(){
+  const i=G.items.find(x=>x.uid===G.modalUid);
+  i.estat=G.motiuSel;
+  audit("MARCAR_INC",{uid:G.modalUid, nom:i.nom, unitat:i.unitat, motiu:G.motiuSel, caixa_id:G.caixaActiva?.id, codi_vh:i.codiVH||null});
+  tancarModal();
+  renderMuntatge();
+}
 function tancarModal(e){ if(e&&e.target!==$("modal-overlay"))return; $("modal-overlay").classList.remove("open"); }
 
 // ── RESULTAT ──────────────────────────────────────────────────────────────
@@ -709,14 +894,17 @@ function renderResultat(reg){
   </div>`;
   if(reg.incidencies.length>0){
     html+=`<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Incidències registrades</div>`;
-    reg.incidencies.forEach(inc=>{html+=`<div class="inc-list-item"><div><div class="inc-nom">${inc.nom}</div>${inc.unitat?`<div class="inc-ud">Unitat ${inc.unitat}</div>`:""}</div><span class="inc-mot">${inc.motiu}</span></div>`;});
+    reg.incidencies.forEach(inc=>{html+=`<div class="inc-list-item"><div><div class="inc-nom">${inc.nom}</div>${inc.unitat?`<div class="inc-ud">Unitat ${inc.unitat}</div>`:""} ${inc.codi_vh?`<div class="inc-ud" style="font-family:monospace">${inc.codi_vh}</div>`:""}</div><span class="inc-mot">${inc.motiu}</span></div>`;});
   }
-  if(reg.foto) html+=`<div class="foto-ok-bar">📷 Evidència fotogràfica adjunta al registre</div>`;
+  if(reg.fotos?.oberta||reg.fotos?.tancada){
+    html+=`<div class="foto-ok-bar">📷 Evidència fotogràfica: ${[reg.fotos?.oberta?"caixa oberta":null, reg.fotos?.tancada?"caixa tancada":null].filter(Boolean).join(" + ")}</div>`;
+  }
   html+=`<div class="audit-box"><div class="audit-tit">Registre d'auditoria</div>
     <div class="audit-row"><span class="audit-k">Operari</span><span class="audit-v">${reg.operari}</span></div>
     <div class="audit-row"><span class="audit-k">Data i hora</span><span class="audit-v">${reg.data}</span></div>
     <div class="audit-row"><span class="audit-k">Estat final</span><span class="audit-v" style="color:${color}">${reg.estat}</span></div>
-    <div class="audit-row"><span class="audit-k">Evidència fotogràfica</span><span class="audit-v">${reg.foto?"Sí":"No"}</span></div>
+    <div class="audit-row"><span class="audit-k">Foto oberta</span><span class="audit-v">${reg.fotos?.oberta?"✓ Sí":"— No"}</span></div>
+    <div class="audit-row"><span class="audit-k">Foto tancada</span><span class="audit-v">${reg.fotos?.tancada?"✓ Sí":"— No"}</span></div>
     <div class="audit-row"><span class="audit-k">Tipus de material</span><span class="audit-v">${reg.tipus==="extern"?`Extern · ${reg.empresa}`:"Material propi"}</span></div>
   </div>
   <div class="res-actions">
